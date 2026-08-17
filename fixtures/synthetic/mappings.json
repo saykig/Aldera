@@ -1,0 +1,104 @@
+{
+  "schema_version": "0.1.0",
+  "mapping_version": "0.1.0",
+  "comparison": {
+    "source_dataset": "ucdp",
+    "target_dataset": "acled"
+  },
+  "mappings": [
+    {
+      "id": "map:crimea-airport-001",
+      "mapping_version": "0.1.0",
+      "source": "ucdp:UCDP-SYN-001",
+      "target": "acled:ACLED-SYN-001",
+      "relation": "aldera:close",
+      "rationale": "The records share day, named location, opposing sides, event mechanism, and fatality count. They remain close rather than exact because the source systems apply independent inclusion, actor, and event-boundary rules.",
+      "scope": {
+        "place": ["Simferopol International Airport", "Crimea"],
+        "temporal": { "from": "2014-02-27", "to": "2014-02-27" },
+        "fields": ["date", "place", "actors", "fatalities"]
+      },
+      "uncertainty": "The observable fields align closely, but independent inclusion rules and event boundaries could still make these different representations.",
+      "meaning_preserved": [
+        "Both records describe an armed encounter at the airport on the same day.",
+        "Both preserve their own identifiers and fatality estimate."
+      ],
+      "meaning_lost": [
+        "UCDP dyad and type-of-violence semantics are not translated into ACLED event taxonomy.",
+        "ACLED interaction and sub-event semantics are not translated into UCDP conflict structure."
+      ],
+      "provenance": {
+        "asserted_by": "Aldera synthetic-fixture author",
+        "asserted_at": "2026-08-17T00:00:00Z",
+        "evidence": ["ucdp:UCDP-SYN-001", "acled:ACLED-SYN-001"],
+        "method": "Manual comparison of native fields in a synthetic fixture"
+      }
+    },
+    {
+      "id": "map:sevastopol-002",
+      "mapping_version": "0.1.0",
+      "source": "ucdp:UCDP-SYN-002",
+      "target": "acled:ACLED-SYN-002",
+      "relation": "aldera:related",
+      "rationale": "The protest occurs inside the place and time of a broader blockade representation, but it is a demonstration rather than the organized-violence event asserted by the UCDP-shaped record.",
+      "scope": {
+        "place": ["Sevastopol", "Crimea"],
+        "temporal": { "from": "2014-03-01", "to": "2014-03-03" },
+        "fields": ["date", "place", "context"]
+      },
+      "uncertainty": "The synthetic narratives establish contextual overlap, but not whether one reporting process influenced the other representation.",
+      "meaning_preserved": ["The two records concern related activity in Sevastopol during the same episode."],
+      "meaning_lost": ["The protest cannot stand in for the multi-day blockade.", "Actor roles and event categories do not align."],
+      "provenance": {
+        "asserted_by": "Aldera synthetic-fixture author",
+        "asserted_at": "2026-08-17T00:00:00Z",
+        "evidence": ["ucdp:UCDP-SYN-002", "acled:ACLED-SYN-002"],
+        "method": "Manual comparison of native fields in a synthetic fixture"
+      }
+    },
+    {
+      "id": "map:perevalne-003",
+      "mapping_version": "0.1.0",
+      "source": "ucdp:UCDP-SYN-003",
+      "target": "acled:ACLED-SYN-003",
+      "relation": "aldera:incompatible",
+      "rationale": "Coincident date, place, and an actor name are insufficient: one record asserts a lethal armed clash while the other asserts a non-violent organizational development.",
+      "scope": {
+        "place": ["Perevalne", "Crimea"],
+        "temporal": { "from": "2014-03-04", "to": "2014-03-04" },
+        "fields": ["event type", "fatalities", "actor"]
+      },
+      "uncertainty": "There is no ambiguity about the fixture's semantic conflict; uncertainty remains about what analogous real-source records would establish.",
+      "meaning_preserved": ["The assertion preserves that the records share a search-relevant time, place, and actor token."],
+      "meaning_lost": ["No event identity or equivalence can be preserved.", "A consumer must not merge fatality or event-type claims."],
+      "provenance": {
+        "asserted_by": "Aldera synthetic-fixture author",
+        "asserted_at": "2026-08-17T00:00:00Z",
+        "evidence": ["ucdp:UCDP-SYN-003", "acled:ACLED-SYN-003"],
+        "method": "Manual comparison of native fields in a synthetic fixture"
+      }
+    },
+    {
+      "id": "map:kerch-unmapped-004",
+      "mapping_version": "0.1.0",
+      "source": "ucdp:UCDP-SYN-004",
+      "target": null,
+      "relation": "aldera:unmapped",
+      "rationale": "No counterpart in the declared ACLED target dataset is asserted within this pinned mapping bundle. This does not claim absence from the full ACLED dataset or from any other dataset.",
+      "scope": {
+        "place": ["Kerch", "Crimea"],
+        "temporal": { "from": "2014-03-18", "to": "2014-03-18" },
+        "fields": ["fixture coverage"]
+      },
+      "uncertainty": "The unmapped state is certain only for this bounded fixture and mapping-bundle version.",
+      "meaning_preserved": ["The UCDP-shaped record remains independently discoverable."],
+      "meaning_lost": ["No cross-dataset event evidence is available in this fixture.", "Unmapped does not imply absent from the full ACLED dataset."],
+      "provenance": {
+        "asserted_by": "Aldera synthetic-fixture author",
+        "asserted_at": "2026-08-17T00:00:00Z",
+        "evidence": ["ucdp:UCDP-SYN-004"],
+        "method": "Exhaustive comparison within the bounded synthetic fixture"
+      }
+    }
+  ]
+}

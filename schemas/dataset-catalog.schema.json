@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aldera.dev/schema/dataset-catalog/0.1.0",
+  "title": "Aldera dataset catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "datasets"],
+  "properties": {
+    "schema_version": { "const": "0.1.0" },
+    "datasets": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "version", "fixture_kind", "native_schema_documentation", "native_id_field"],
+        "properties": {
+          "id": { "enum": ["ucdp", "acled"] },
+          "title": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "minLength": 1 },
+          "fixture_kind": { "enum": ["synthetic", "source"] },
+          "native_schema_documentation": { "type": "string", "format": "uri" },
+          "native_id_field": { "enum": ["id", "event_id_cnty"] }
+        }
+      }
+    }
+  }
+}

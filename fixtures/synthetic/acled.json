@@ -1,0 +1,71 @@
+{
+  "schema_version": "0.1.0",
+  "dataset": "acled",
+  "dataset_version": "synthetic-0.1.0",
+  "fixture_notice": "Synthetic demonstration records shaped like selected ACLED fields. These are not ACLED observations and must not be cited as research data.",
+  "records": [
+    {
+      "ref": "acled:ACLED-SYN-001",
+      "native_id": "ACLED-SYN-001",
+      "native_sha256": "sha256:0c393636e17ba6ed8b6cb398d5faf2e541950f48fd427ea1299d871fbbe0a309",
+      "native": {
+        "event_id_cnty": "ACLED-SYN-001",
+        "event_date": "2014-02-27",
+        "disorder_type": "Political violence",
+        "event_type": "Battles",
+        "sub_event_type": "Armed clash",
+        "actor1": "Synthetic armed group",
+        "assoc_actor_1": "",
+        "actor2": "Military Forces of Ukraine",
+        "assoc_actor_2": "",
+        "country": "Ukraine",
+        "admin1": "Crimea",
+        "location": "Simferopol International Airport",
+        "fatalities": 1,
+        "notes": "Synthetic fixture narrative A"
+      }
+    },
+    {
+      "ref": "acled:ACLED-SYN-002",
+      "native_id": "ACLED-SYN-002",
+      "native_sha256": "sha256:2fba19fdd7dd912b17145ed7e181dbe07643c6f59ef897a9ff40f02d65c8a6df",
+      "native": {
+        "event_id_cnty": "ACLED-SYN-002",
+        "event_date": "2014-03-02",
+        "disorder_type": "Demonstrations",
+        "event_type": "Protests",
+        "sub_event_type": "Peaceful protest",
+        "actor1": "Protesters (Ukraine)",
+        "assoc_actor_1": "Local residents",
+        "actor2": "",
+        "assoc_actor_2": "",
+        "country": "Ukraine",
+        "admin1": "Crimea",
+        "location": "Sevastopol",
+        "fatalities": 0,
+        "notes": "Synthetic protest during a broader multi-day blockade"
+      }
+    },
+    {
+      "ref": "acled:ACLED-SYN-003",
+      "native_id": "ACLED-SYN-003",
+      "native_sha256": "sha256:e3d6fa10275ec1ae2c8ddc9951a490f48705fe6d60bbe763acdbae49590a0598",
+      "native": {
+        "event_id_cnty": "ACLED-SYN-003",
+        "event_date": "2014-03-04",
+        "disorder_type": "Strategic developments",
+        "event_type": "Strategic developments",
+        "sub_event_type": "Change to group/activity",
+        "actor1": "Synthetic armed group",
+        "assoc_actor_1": "",
+        "actor2": "",
+        "assoc_actor_2": "",
+        "country": "Ukraine",
+        "admin1": "Crimea",
+        "location": "Perevalne",
+        "fatalities": 0,
+        "notes": "Synthetic non-violent organizational announcement"
+      }
+    }
+  ]
+}

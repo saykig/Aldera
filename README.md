@@ -51,7 +51,3 @@ More detail is in [docs/architecture.md](docs/architecture.md).
 `aldera map <source> [target]` is read-only and inspects assertions involving the source or between the specified records.
 
 `aldera search` supports dataset, place, date range, actor, relation, and source-identifier filters. Pass another bundle with `--data-dir`.
-
-## Scope
-
-This first vertical slice has no graphical frontend, database, network ingestion, policy evaluator, DSL, or inherited product corpus. Real-data access and licensing decisions are intentionally future work.

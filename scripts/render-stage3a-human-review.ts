@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { adaptIcbe } from "../src/adapters/icbe.js";
 import { CandidateStore } from "../src/candidate-store.js";
@@ -9,10 +9,10 @@ import type {
 } from "../src/types.js";
 
 const args = process.argv.slice(2).filter((arg) => arg !== "--");
-const [mainBundleDirectory, controlBundleDirectory, outputPath] = args;
+const [mainBundleDirectory, controlBundleDirectory, outputPath, benchmarkPath] = args;
 if (!mainBundleDirectory || !controlBundleDirectory || !outputPath) {
   throw new Error(
-    "usage: render-stage3a-human-review.ts <main bundles> <MH17 control bundles> <output Markdown>",
+    "usage: render-stage3a-human-review.ts <main bundles> <MH17 control bundles> <output Markdown> [human benchmark JSON]",
   );
 }
 
@@ -23,6 +23,88 @@ const mainEvaluations = mainStore.pairEvaluations(query);
 const controlStore = new CandidateStore(controlBundleDirectory);
 const controlResult = controlStore.search(query);
 const controlEvaluations = controlStore.pairEvaluations(query);
+
+type ReviewChoice = "yes" | "no" | "unsure";
+type ScopeDirection =
+  | "icbe_broader_ucdp_narrower"
+  | "ucdp_broader_icbe_narrower"
+  | null;
+
+interface HumanBenchmarkCase {
+  review_item: number;
+  pair: { icbe_ref: string; ucdp_ref: string };
+  aldera: {
+    prioritized: boolean;
+    candidate_id: string | null;
+    reasons: string[];
+    exclusion_reasons: string[];
+  };
+  human_judgment: {
+    same_underlying_occurrence: ReviewChoice;
+    meaningfully_related: ReviewChoice;
+    broader_narrower: ReviewChoice;
+    broader_narrower_direction: ScopeDirection;
+    safe_or_unsafe_equivalence:
+      | "safe_as_equivalent"
+      | "unsafe_as_equivalent"
+      | "uncertain";
+    note: string | null;
+  };
+}
+
+interface HumanBenchmark {
+  kind: "human_review_benchmark";
+  mapping_authority: false;
+  not_a_mapping_bundle: true;
+  review_date: string;
+  candidate_contract: { id: string; version: string; sha256: string };
+  search_receipts: { main: string; mh17_control: string };
+  cases: HumanBenchmarkCase[];
+}
+
+const benchmark = benchmarkPath
+  ? (JSON.parse(readFileSync(resolve(benchmarkPath), "utf8")) as HumanBenchmark)
+  : undefined;
+
+if (benchmark) {
+  if (
+    benchmark.kind !== "human_review_benchmark" ||
+    benchmark.mapping_authority !== false ||
+    benchmark.not_a_mapping_bundle !== true
+  ) {
+    throw new Error("human benchmark must be explicitly non-authoritative");
+  }
+  if (benchmark.review_date !== "2026-08-18") {
+    throw new Error(`unexpected human review date ${benchmark.review_date}`);
+  }
+  if (
+    JSON.stringify(benchmark.candidate_contract) !==
+      JSON.stringify(mainResult.receipt.candidate_contract) ||
+    JSON.stringify(benchmark.candidate_contract) !==
+      JSON.stringify(controlResult.receipt.candidate_contract)
+  ) {
+    throw new Error("human benchmark candidate-contract identity does not match the cases");
+  }
+  if (benchmark.cases.length !== 16) throw new Error("human benchmark must contain 16 cases");
+  if (new Set(benchmark.cases.map(({ review_item }) => review_item)).size !== 16) {
+    throw new Error("human benchmark review-item numbers must be unique");
+  }
+  if (
+    benchmark.search_receipts.main !== mainResult.receipt.receipt_sha256 ||
+    benchmark.search_receipts.mh17_control !== controlResult.receipt.receipt_sha256
+  ) {
+    throw new Error("human benchmark search receipts do not match the pinned cases");
+  }
+  for (const item of benchmark.cases) {
+    const judgment = item.human_judgment;
+    if (
+      (judgment.broader_narrower === "yes") !==
+      (judgment.broader_narrower_direction !== null)
+    ) {
+      throw new Error(`human benchmark item ${item.review_item} has inconsistent scope direction`);
+    }
+  }
+}
 
 function present(value: unknown): boolean {
   return value !== null && value !== undefined && value !== "";
@@ -105,6 +187,40 @@ function reviewItem(
 ): string[] {
   const { icbe, ucdp } = recordsFor(store, evaluation);
   const icbeView = adaptIcbe(icbe.native);
+  const reviewed = benchmark?.cases.find((item) => item.review_item === index);
+  if (reviewed) {
+    if (
+      reviewed.pair.icbe_ref !== evaluation.icbe_ref ||
+      reviewed.pair.ucdp_ref !== evaluation.ucdp_ref
+    ) {
+      throw new Error(`human benchmark item ${index} does not identify the rendered pair`);
+    }
+    if (
+      reviewed.aldera.prioritized !== evaluation.candidate ||
+      reviewed.aldera.candidate_id !== evaluation.candidate_id ||
+      JSON.stringify(reviewed.aldera.reasons) !== JSON.stringify(evaluation.reasons) ||
+      JSON.stringify(reviewed.aldera.exclusion_reasons) !==
+        JSON.stringify(evaluation.exclusion_reasons)
+    ) {
+      throw new Error(`human benchmark item ${index} does not match Aldera's pinned output`);
+    }
+  }
+  const checkbox = (choice: ReviewChoice | undefined, option: ReviewChoice): string =>
+    choice === option ? "[x]" : "[ ]";
+  const judgment = reviewed?.human_judgment;
+  const unsafeChoice: ReviewChoice | undefined = judgment
+    ? judgment.safe_or_unsafe_equivalence === "unsafe_as_equivalent"
+      ? "yes"
+      : judgment.safe_or_unsafe_equivalence === "safe_as_equivalent"
+        ? "no"
+        : "unsure"
+    : undefined;
+  const direction =
+    judgment?.broader_narrower_direction === "icbe_broader_ucdp_narrower"
+      ? "ICBe broader; UCDP narrower"
+      : judgment?.broader_narrower_direction === "ucdp_broader_icbe_narrower"
+        ? "UCDP broader; ICBe narrower"
+        : "—";
   return [
     `### ${index}. ICBe row ${rowNumber(icbe)} ↔ UCDP ${String(ucdp.native.id)}`,
     "",
@@ -130,11 +246,12 @@ function reviewItem(
     "",
     "HUMAN REVIEW:",
     "",
-    "Same underlying occurrence? [ ] yes [ ] no [ ] unsure",
-    "Meaningfully related?       [ ] yes [ ] no [ ] unsure",
-    "Broader/narrower relation?  [ ] yes [ ] no [ ] unsure",
-    "Not safely comparable?      [ ] yes [ ] no [ ] unsure",
-    "Notes:",
+    `Same underlying occurrence? ${checkbox(judgment?.same_underlying_occurrence, "yes")} yes ${checkbox(judgment?.same_underlying_occurrence, "no")} no ${checkbox(judgment?.same_underlying_occurrence, "unsure")} unsure`,
+    `Meaningfully related?       ${checkbox(judgment?.meaningfully_related, "yes")} yes ${checkbox(judgment?.meaningfully_related, "no")} no ${checkbox(judgment?.meaningfully_related, "unsure")} unsure`,
+    `Broader/narrower relation?  ${checkbox(judgment?.broader_narrower, "yes")} yes ${checkbox(judgment?.broader_narrower, "no")} no ${checkbox(judgment?.broader_narrower, "unsure")} unsure`,
+    `Direction: ${direction}`,
+    `Not safely comparable?      ${checkbox(unsafeChoice, "yes")} yes ${checkbox(unsafeChoice, "no")} no ${checkbox(unsafeChoice, "unsure")} unsure`,
+    `Notes: ${judgment?.note ?? ""}`,
     "",
     "",
   ];
@@ -161,7 +278,9 @@ function evaluationFor(
 const lines = [
   "# Aldera Stage 3A human-review checkpoint",
   "",
-  "> No substantive relationship judgment has been pre-filled. Aldera candidate status is only an algorithmic prioritization result. Stage 3A substantive relationship judgments remain pending human review.",
+  benchmark
+    ? `> Human review completed ${benchmark.review_date}. These judgments are preserved exactly in a non-authoritative benchmark; they are not mapping assertions.`
+    : "> No substantive relationship judgment has been pre-filled. Aldera candidate status is only an algorithmic prioritization result. Stage 3A substantive relationship judgments remain pending human review.",
   "",
   "## A. Current prioritized candidates",
   "",

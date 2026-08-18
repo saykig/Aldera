@@ -493,3 +493,68 @@ test(
     assert.match(review, /substantive relationship judgments remain pending human review/);
   },
 );
+
+const localHumanBenchmark = fileURLToPath(
+  new URL("../data/local/stage3a/human-review-benchmark.json", import.meta.url),
+);
+test(
+  "the completed human benchmark is pinned, non-authoritative, and renders exactly one choice per question",
+  { skip: !existsSync(localHumanBenchmark) },
+  () => {
+    const benchmark = JSON.parse(readFileSync(localHumanBenchmark, "utf8"));
+    assert.equal(benchmark.kind, "human_review_benchmark");
+    assert.equal(benchmark.mapping_authority, false);
+    assert.equal(benchmark.not_a_mapping_bundle, true);
+    assert.equal(benchmark.review_date, "2026-08-18");
+    assert.equal(benchmark.cases.length, 16);
+    assert.equal(benchmark.cases.filter((item: any) => item.aldera.prioritized).length, 13);
+    assert.equal(
+      benchmark.cases.filter(
+        (item: any) => item.human_judgment.same_underlying_occurrence === "yes",
+      ).length,
+      1,
+    );
+    assert.equal(
+      benchmark.cases.filter((item: any) => item.human_judgment.meaningfully_related === "yes")
+        .length,
+      16,
+    );
+    assert.equal(
+      benchmark.cases.filter((item: any) => item.human_judgment.broader_narrower === "yes")
+        .length,
+      8,
+    );
+    assert.equal(
+      benchmark.cases.filter(
+        (item: any) =>
+          item.human_judgment.safe_or_unsafe_equivalence === "unsafe_as_equivalent",
+      ).length,
+      15,
+    );
+    assert.equal("mappings" in benchmark, false);
+    const directory = mkdtempSync(join(tmpdir(), "aldera-completed-review-test-"));
+    temporaryDirectories.push(directory);
+    const output = join(directory, "human-review.md");
+    const renderer = fileURLToPath(
+      new URL("../scripts/render-stage3a-human-review.ts", import.meta.url),
+    );
+    execFileSync(
+      process.execPath,
+      [
+        "--import",
+        "tsx",
+        renderer,
+        localRealBundles,
+        localMh17Bundles,
+        output,
+        localHumanBenchmark,
+      ],
+      { encoding: "utf8" },
+    );
+    const completed = readFileSync(output, "utf8");
+    assert.equal((completed.match(/\[x\]/g) ?? []).length, 64);
+    assert.match(completed, /ICBe row 18436 ↔ UCDP 154679/);
+    assert.match(completed, /Same underlying occurrence\? \[x\] yes/);
+    assert.match(completed, /Human review completed 2026-08-18/);
+  },
+);

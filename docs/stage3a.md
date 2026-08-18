@@ -59,9 +59,45 @@ Candidate receipts bind search contract `0.4`, candidate-contract ID/version/has
 
 The local review artifact includes all 120 ICBe×UCDP pair evaluations, not only surfaced candidates. Candidate generation is only a prioritization aid. `No candidate` means the pinned candidate contract did not prioritize a record; it does not mean `aldera:unmapped`, which would require a separately accepted assertion within a declared mapping bundle.
 
-**Stage 3A substantive relationship judgments remain pending human review.** The separate `data/local/stage3a/human-review.md` checkpoint leaves every judgment box and notes field blank.
+## Human-review result
 
-The unchanged candidate contract was also run against a separate **2014-07-16 through 2014-07-18** control slice from the same pinned sources. That slice contains ICBe rows 18436 and 18445 plus 13 UCDP records whose native intervals overlap the window. The algorithm surfaced ICBe row 18436 ↔ UCDP `154679` with `same_date`, `geographic_context_overlap`, and `actor_overlap`; it surfaced five other pairs as well. These are algorithmic results presented for human assessment, not accepted substantive relationships or mappings.
+Human review closed Stage 3A on **2026-08-18** without creating mapping assertions. The local checkpoint and machine-readable benchmark contain 16 reviewed pairs: seven main-window candidates, three deliberately selected challenge non-candidates, and six surfaced control-window pairs. The recorded judgments are:
+
+- **1/16** same underlying occurrence;
+- **16/16** meaningfully related;
+- **8/16** broader/narrower;
+- **15/16** unsafe to treat as equivalent records.
+
+These are **not general accuracy statistics**. The 16 examples were deliberately selected candidates, challenges, and control cases, not a random or balanced evaluation sample. General precision or recall must not be calculated from them.
+
+The retrieval target matters:
+
+- **Same-occurrence retrieval:** ICBe row 18436 ↔ UCDP `154679` (MH17) is the reviewed positive case. Many surfaced candidates were judged not to represent the same occurrence.
+- **Meaningful-relation retrieval:** all reviewed surfaced candidates were judged meaningfully related. The three challenge pairs that Aldera did not prioritize were also judged meaningfully related, demonstrating that the current prioritization can miss broader relationships.
+
+The main Stage 3A lesson is that the candidate contract appears useful for finding a **relationship neighborhood** from time, geographic-context, and actor signals, but those signals are insufficient to determine the **type** of relationship. Candidate discovery must remain separate from mapping authority. The candidate rules were not changed from these 16 examples, avoiding overfitting this small proving ground.
+
+The local `data/local/stage3a/human-review-benchmark.json` is explicitly a human-review benchmark, not a mapping bundle or mapping authority. It pins full pair refs, Aldera prioritization output, the human judgments, review date, both search receipts, and candidate-contract identity/hash. It begins an iterative evaluation loop:
+
+```text
+human-reviewed examples
+        ↓
+pinned benchmark
+        ↓
+new candidate-contract version
+        ↓
+rerun benchmark
+        ↓
+compare what improved/regressed
+        ↓
+version/hash the new contract
+```
+
+Aldera must not silently self-learn or mutate candidate rules. Any improvement remains explicit, versioned, inspectable, and reproducible. One important benchmark limitation is that all 16 cases were judged meaningfully related, so it contains no human-reviewed `not meaningfully related` example. A later proving ground must deliberately test that missing case; Stage 3A is not expanded to manufacture one.
+
+The unchanged candidate contract was also run against a separate **2014-07-16 through 2014-07-18** control slice from the same pinned sources. That slice contains ICBe rows 18436 and 18445 plus 13 UCDP records whose native intervals overlap the window. The algorithm surfaced ICBe row 18436 ↔ UCDP `154679` with `same_date`, `geographic_context_overlap`, and `actor_overlap`; it surfaced five other pairs as well. The human judgments remain benchmark observations, not accepted relationships or mappings.
+
+Stage 3B remains unimplemented. [The Stage 3B design note](stage3b-design.md) evaluates whether relationship dimensions should replace a forced single label while preserving the current separation between candidate discovery and mapping authority.
 
 ## Findings that break synthetic assumptions
 
@@ -120,7 +156,8 @@ pnpm stage3a:build-bundles -- \
 pnpm stage3a:human-review -- \
   data/local/stage3a/bundles \
   data/local/stage3a/mh17/bundles \
-  data/local/stage3a/human-review.md
+  data/local/stage3a/human-review.md \
+  data/local/stage3a/human-review-benchmark.json
 ```
 
-The detailed review and compact human checkpoint keep ICBe and UCDP fields in visibly separate sections and preserve populated native action/category values. They are local because they reproduce third-party native descriptions.
+Omit the benchmark argument to generate a blank checkpoint for a new review. Supplying the benchmark validates its contract identity, receipts, pair refs, prioritization output, and scope-direction consistency before rendering the completed judgments. The detailed review and compact human checkpoint keep ICBe and UCDP fields in visibly separate sections and preserve populated native action/category values. They are local because they reproduce third-party native descriptions.

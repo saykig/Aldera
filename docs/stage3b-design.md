@@ -1,6 +1,6 @@
 # Stage 3B relationship-assertion design
 
-Status: **proposed v0.1 design — pending final approval**. This note defines a bounded implementation proposal; it does not create a schema, bundle, assertion, or mapping authority.
+Status: **implemented v0.1 on `stage3b-v0.1`; not merged into `main`**. The implementation follows this bounded design without changing the Stage 3A candidate contract.
 
 ## Why the old relation enum is not one variable
 

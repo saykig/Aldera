@@ -40,28 +40,24 @@ describe("aldera CLI", () => {
     assert.match(relation.err.join("\n"), /Unknown option/);
 
     const dataset = capture();
-    assert.equal(await runCli(["search", "--datasets", "ucdp,example"], dataset.io), 1);
+    assert.equal(
+      await runCli(["search", "--candidate-pairs", "--datasets", "ucdp,example"], dataset.io),
+      1,
+    );
     assert.match(dataset.err.join("\n"), /Unknown dataset/);
   });
 
-  test(
-    "validate reports the reconstructed ICBe/UCDP source bundles",
-    { skip: !hasLocalStage3aBundles },
-    async () => {
+  test("validate reports the tracked relationship bundle on a clean clone", async () => {
       const captured = capture();
-      assert.equal(
-        await runCli(["validate", "--data-dir", localStage3aBundles, "--json"], captured.io),
-        0,
-      );
+      assert.equal(await runCli(["validate", "--json"], captured.io), 0);
       const result = JSON.parse(captured.out.join("\n"));
       assert.equal(result.format_version, "0.1");
       assert.equal(result.valid, true);
-      assert.equal(result.empirical_direction, "icbe-ucdp");
-      assert.equal(result.checked.native_records, 22);
-      assert.equal(result.checked.relationship_assertions, 0);
+      assert.equal(result.validation_mode, "metadata_only");
+      assert.equal(result.checked.relationship_assertions, 16);
+      assert.equal(result.native_content, "not_loaded");
       assert.deepEqual(captured.err, []);
-    },
-  );
+  });
 
   test(
     "inspect exposes opaque ICBe and UCDP identities without a shared native-ID assumption",
@@ -88,24 +84,17 @@ describe("aldera CLI", () => {
     },
   );
 
-  test(
-    "map remains read-only and reports that Stage 3B assertions do not exist",
-    { skip: !hasLocalStage3aBundles },
-    async () => {
+  test("map returns a reviewed assertion without requiring native data", async () => {
       const captured = capture();
       assert.equal(
-        await runCli(
-          ["map", icbeRef, ucdpRef, "--data-dir", localStage3aBundles, "--json"],
-          captured.io,
-        ),
+        await runCli(["map", icbeRef, ucdpRef, "--json"], captured.io),
         0,
       );
       const output = JSON.parse(captured.out.join("\n"));
       assert.equal(output.mode, "relationship_assertions");
-      assert.deepEqual(output.relationship_assertions, []);
-      assert.match(output.notice, /Stage 3B is not implemented/);
-    },
-  );
+      assert.deepEqual(output.receipt.assertion_ids, ["relationship:icbe-ucdp:0001"]);
+      assert.equal(output.native_content, "not_loaded");
+  });
 
   test(
     "search is explicitly non-authoritative ICBe/UCDP candidate discovery",

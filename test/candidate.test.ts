@@ -372,6 +372,10 @@ test(
     const evaluations = store.pairEvaluations({ candidate_pairs: true, datasets: ["icbe", "ucdp"] });
     assert.equal(result.records.length, 22);
     assert.equal(result.candidate_pairs.length, 7);
+    assert.equal(
+      result.receipt.receipt_sha256,
+      "sha256:e58adf24b09f6d13c27f806017636f5958d6198355bedbce417927f86a645374",
+    );
     assert.equal(result.not_prioritized_refs.length, 12);
     assert.equal(evaluations.length, 120);
     assert.ok(
@@ -440,6 +444,10 @@ test(
     assert.equal(store.bundles.ucdp.records.length, 13);
     assert.equal(evaluations.length, 26);
     assert.equal(result.candidate_pairs.length, 6);
+    assert.equal(
+      result.receipt.receipt_sha256,
+      "sha256:18bc345fffefe18913da411e6c4b2b67b79cf4e6e164c0dcfc900c74adafe064",
+    );
     const declaredHashes = JSON.parse(readFileSync(mh17SourceMetadata, "utf8"))
       .canonical_parsed_bundle_sha256;
     assert.equal(result.receipt.inputs.icbe.source_bundle_sha256, declaredHashes.icbe);

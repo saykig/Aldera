@@ -14,6 +14,7 @@ import {
 import { CLI_FORMAT_VERSION } from "./types.js";
 import type {
   RelationshipAssertion,
+  RelationshipAssertionBundle,
   RelationshipOutput,
   RelationshipSearchQuery,
 } from "./relationship-types.js";
@@ -162,6 +163,7 @@ function relationshipMetadata(store: RelationshipStore) {
     assertion_bundle_version: store.bundle.assertion_bundle_version,
     bundle_sha256: store.bundle.bundle_sha256,
     relationship_authority: store.bundle.relationship_authority,
+    authority_provenance: store.bundle.authority_provenance,
     comparison: store.bundle.comparison,
     benchmark_provenance: store.bundle.benchmark_provenance,
     assertion_count: store.bundle.assertions.length,
@@ -184,7 +186,19 @@ function runInspect(args: readonly string[], io: CliIO): number {
   } else {
     const assertion = store.assertion(target);
     if (assertion) {
-      result = { ...assertion, relationship_authority: true };
+      const nativeContent = store.nativeRecords ? "loaded_and_validated" : "not_loaded";
+      result = {
+        ...assertion,
+        relationship_authority: true,
+        authority_provenance: store.bundle.authority_provenance,
+        assertion_bundle_version: store.bundle.assertion_bundle_version,
+        assertion_bundle_sha256: store.bundle.bundle_sha256,
+        benchmark_sha256: store.bundle.benchmark_provenance.sha256,
+        native_content: nativeContent,
+        native_content_notice: store.nativeRecords
+          ? "Native endpoint records were loaded from reconstructed bundles and their exact hashes were validated."
+          : "Metadata-only assertion inspection: native endpoint content was not loaded or validated.",
+      };
     } else if (target === "icbe" || target === "ucdp") {
       if (!values["data-dir"]) {
         throw new Error("native dataset inspection requires reconstructed bundles; pass --data-dir");
@@ -224,6 +238,7 @@ function printInspect(result: unknown, io: CliIO): void {
   }
   if (item.kind === "relationship_assertion") {
     printRelationshipAssertion(item as unknown as RelationshipAssertion, io);
+    if (item.native_content_notice) io.out(String(item.native_content_notice));
     return;
   }
   if (item.kind === "native_source_dataset") {
@@ -247,24 +262,34 @@ function runValidate(args: readonly string[], io: CliIO): number {
     ...(values["data-dir"] ? { nativeDataRoot: values["data-dir"] } : {}),
   });
   const errors = validation.diagnostics.filter(({ severity }) => severity === "error");
+  const valid = errors.length === 0;
+  const nativeRequested = Boolean(values["data-dir"]);
+  const nativeContent = nativeRequested
+    ? valid
+      ? "loaded_and_validated"
+      : "loaded_but_invalid"
+    : "not_loaded";
+  const bundle = validation.bundle as Partial<RelationshipAssertionBundle>;
   const result = {
     format_version: CLI_FORMAT_VERSION,
-    valid: errors.length === 0,
-    validation_mode: values["data-dir"] ? "metadata_and_native" : "metadata_only",
-    native_content: values["data-dir"] ? "loaded_and_validated" : "not_loaded",
-    relationship_schema_version: validation.bundle.schema_version,
-    assertion_bundle_version: validation.bundle.assertion_bundle_version,
-    assertion_bundle_sha256: validation.bundle.bundle_sha256,
-    benchmark_sha256: validation.bundle.benchmark_provenance.sha256,
+    valid,
+    validation_mode: nativeRequested ? "metadata_and_native" : "metadata_only",
+    native_content: nativeContent,
+    relationship_schema_version: bundle.schema_version ?? null,
+    assertion_bundle_version: bundle.assertion_bundle_version ?? null,
+    assertion_bundle_sha256: bundle.bundle_sha256 ?? null,
+    benchmark_sha256: bundle.benchmark_provenance?.sha256 ?? null,
     checked: {
-      relationship_assertions: validation.bundle.assertions.length,
-      native_endpoint_occurrences: values["data-dir"]
-        ? validation.bundle.assertions.length * 2
+      relationship_assertions: bundle.assertions?.length ?? 0,
+      native_endpoint_occurrences: nativeRequested && valid
+        ? (bundle.assertions?.length ?? 0) * 2
         : 0,
     },
     diagnostics: validation.diagnostics,
-    notice: values["data-dir"]
-      ? "Relationship metadata and reconstructed native endpoint records were validated."
+    notice: nativeRequested
+      ? valid
+        ? "Relationship metadata and reconstructed native endpoint records were loaded and validated successfully."
+        : "Reconstructed native content was requested but loading or validation failed; no validated-native claim is made."
       : "Metadata-only validation: native ICBe/UCDP content was not loaded or validated.",
   };
   if (values.json) outputJson(result, io);
@@ -397,6 +422,7 @@ function printRelationshipAssertion(assertion: RelationshipAssertion, io: CliIO)
 function printRelationshipOutput(output: RelationshipOutput, io: CliIO): void {
   io.out(`Relationship receipt ${output.receipt.receipt_sha256}`);
   io.out(output.native_content_notice);
+  if (output.assertion_absence_notice) io.out(output.assertion_absence_notice);
   io.out(`Assertions (${output.assertions.length}):`);
   for (const assertion of output.assertions) printRelationshipAssertion(assertion, io);
 }

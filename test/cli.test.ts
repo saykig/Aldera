@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { runCli, type CliIO } from "../src/cli.js";
+import { relationshipAssertionId } from "../src/relationship-store.js";
 
 function capture(): { io: CliIO; out: string[]; err: string[] } {
   const out: string[] = [];
@@ -23,6 +24,7 @@ const benchmarkPath = fileURLToPath(
 const benchmark = JSON.parse(readFileSync(benchmarkPath, "utf8"));
 const icbeRef = benchmark.cases[0].pair.icbe_ref as string;
 const ucdpRef = benchmark.cases[0].pair.ucdp_ref as string;
+const firstRelationshipId = relationshipAssertionId(icbeRef, ucdpRef);
 
 describe("aldera CLI", () => {
   test("help presents only the current ICBe/UCDP empirical direction", async () => {
@@ -92,7 +94,7 @@ describe("aldera CLI", () => {
       );
       const output = JSON.parse(captured.out.join("\n"));
       assert.equal(output.mode, "relationship_assertions");
-      assert.deepEqual(output.receipt.assertion_ids, ["relationship:icbe-ucdp:0001"]);
+      assert.deepEqual(output.receipt.assertion_ids, [firstRelationshipId]);
       assert.equal(output.native_content, "not_loaded");
   });
 

@@ -10,6 +10,8 @@ import { runCli, type CliIO } from "../src/cli.js";
 import {
   RelationshipStore,
   defaultRelationshipPaths,
+  loadRelationshipValidation,
+  relationshipAssertionId,
   relationshipBundleHash,
   validateRelationshipArtifacts,
 } from "../src/relationship-store.js";
@@ -34,6 +36,10 @@ function cloneBundle(): RelationshipAssertionBundle {
 
 function diagnosticCodes(bundle: RelationshipAssertionBundle): string[] {
   return validateRelationshipArtifacts(bundle, trackedBenchmark).map(({ code }) => code);
+}
+
+function assertionForReview(reviewItem: number) {
+  return trackedBundle.assertions.find((assertion) => assertion.review_item === reviewItem)!;
 }
 
 function capture(): { io: CliIO; out: string[]; err: string[] } {
@@ -69,19 +75,18 @@ describe("Stage 3B relationship assertions", () => {
       15,
     );
     assert.equal(assertions.filter(({ human_note }) => human_note !== undefined).length, 4);
-    for (const assertion of assertions) {
-      assert.equal("rationale" in assertion, false);
-      assert.equal("meaning_preserved" in assertion, false);
-      assert.equal("meaning_lost" in assertion, false);
-      assert.equal("uncertainty_note" in assertion, false);
-    }
+    assert.deepEqual(trackedBundle.authority_provenance, {
+      authority_basis: "explicit_human_approval",
+      approval_date: trackedBenchmark.review_date,
+      benchmark_sha256: sha256(trackedBenchmark),
+    });
   });
 
   test("identifies only the MH17 pair as occurrence-level safe same-identity", () => {
     const [same] = new RelationshipStore()
       .assertions()
       .filter(({ dimensions }) => dimensions.identity === "same");
-    assert.equal(same?.id, "relationship:icbe-ucdp:0011");
+    assert.equal(same?.id, "relationship:icbe-ucdp:53611ff435e21e953cf93d63");
     assert.match(same?.source_ref ?? "", /row-18436-crisis-471-sentence-44$/);
     assert.equal(same?.target_ref, "ucdp:154679");
     assert.equal(same?.dimensions.scope, "no_broader_narrower_asserted");
@@ -101,7 +106,7 @@ describe("Stage 3B relationship assertions", () => {
       );
       assert.equal(benchmarkCase.aldera.prioritized, false);
       const assertion = store.assertion(
-        `relationship:icbe-ucdp:${String(reviewItem).padStart(4, "0")}`,
+        relationshipAssertionId(benchmarkCase.pair.icbe_ref, benchmarkCase.pair.ucdp_ref),
       );
       assert.equal(assertion?.review_item, reviewItem);
       assert.equal(assertion?.dimensions.relatedness, "related");
@@ -136,9 +141,26 @@ describe("Stage 3B relationship assertions", () => {
     drift.assertions[0]!.dimensions.scope = "source_broader";
     assert.ok(diagnosticCodes(drift).includes("ALD-REL-TRANSCRIPTION-DRIFT"));
 
-    const inventedSemantics = cloneBundle();
+    const inventedSemantics = cloneBundle() as RelationshipAssertionBundle & {
+      assertions: Array<RelationshipAssertionBundle["assertions"][number] & { rationale?: string }>;
+    };
     inventedSemantics.assertions[0]!.rationale = "Invented.";
-    assert.ok(diagnosticCodes(inventedSemantics).includes("ALD-REL-UNSUPPORTED-SEMANTICS"));
+    assert.ok(diagnosticCodes(inventedSemantics).includes("ALD-REL-SCHEMA"));
+
+    assert.doesNotThrow(() => validateRelationshipArtifacts({}, trackedBenchmark));
+    assert.ok(
+      validateRelationshipArtifacts({}, trackedBenchmark).some(({ code }) => code === "ALD-REL-SCHEMA"),
+    );
+    const malformedDirectory = mkdtempSync(join(tmpdir(), "aldera-malformed-bundle-"));
+    temporaryDirectories.push(malformedDirectory);
+    const malformedPath = join(malformedDirectory, "relationship-assertions.json");
+    writeFileSync(malformedPath, "{}\n");
+    assert.doesNotThrow(() => loadRelationshipValidation({ bundlePath: malformedPath }));
+    assert.ok(
+      loadRelationshipValidation({ bundlePath: malformedPath }).diagnostics.some(
+        ({ code }) => code === "ALD-REL-SCHEMA",
+      ),
+    );
 
     const badHash = cloneBundle();
     badHash.bundle_sha256 = `sha256:${"f".repeat(64)}`;
@@ -164,24 +186,28 @@ describe("Stage 3B relationship assertions", () => {
     });
     assert.notEqual(changedReceiptHash, original.receipt.receipt_sha256);
 
-    const pairIds = new Map(
-      trackedBundle.assertions.map(({ source_ref, target_ref, id }) => [
-        `${source_ref}\u0000${target_ref}`,
-        id,
-      ]),
+    const regeneratedIds = (cases: typeof trackedBenchmark.cases) =>
+      new Map(
+        cases.map((item: any) => [
+          `${item.pair.icbe_ref}\u0000${item.pair.ucdp_ref}`,
+          relationshipAssertionId(item.pair.icbe_ref, item.pair.ucdp_ref),
+        ]),
+      );
+    assert.deepEqual(
+      regeneratedIds([...trackedBenchmark.cases].reverse()),
+      regeneratedIds(trackedBenchmark.cases),
     );
-    const reorderedPairIds = new Map(
-      [...trackedBundle.assertions].reverse().map(({ source_ref, target_ref, id }) => [
-        `${source_ref}\u0000${target_ref}`,
-        id,
-      ]),
+    const mh17 = assertionForReview(11);
+    assert.equal(
+      relationshipAssertionId(mh17.source_ref, mh17.target_ref),
+      mh17.id,
+      "the stable ID is derived only from the ordered endpoint refs",
     );
-    assert.deepEqual(reorderedPairIds, pairIds);
   });
 
   test("normalizes parameters and orders assertions, refs, and receipts deterministically", () => {
     const store = new RelationshipStore();
-    const target = store.assertion("relationship:icbe-ucdp:0011")!.target_ref;
+    const target = assertionForReview(11).target_ref;
     const first = store.search({ target_ref: `  ${target}  ` });
     const second = store.search({ target_ref: target });
     assert.deepEqual(first, second);
@@ -201,14 +227,33 @@ describe("Stage 3B relationship assertions", () => {
     assert.equal(validation.native_content, "not_loaded");
     assert.equal(validation.checked.relationship_assertions, 16);
 
-    const inspect = capture();
+    const invalidNativeDirectory = mkdtempSync(join(tmpdir(), "aldera-missing-native-"));
+    temporaryDirectories.push(invalidNativeDirectory);
+    const invalidNative = capture();
     assert.equal(
-      await runCli(["inspect", "relationship:icbe-ucdp:0011", "--json"], inspect.io),
+      await runCli(["validate", "--data-dir", invalidNativeDirectory, "--json"], invalidNative.io),
+      1,
+    );
+    const invalidValidation = JSON.parse(invalidNative.out.join("\n"));
+    assert.equal(invalidValidation.valid, false);
+    assert.equal(invalidValidation.native_content, "loaded_but_invalid");
+    assert.equal(invalidValidation.checked.native_endpoint_occurrences, 0);
+    assert.match(invalidValidation.notice, /no validated-native claim/);
+
+    const inspect = capture();
+    const mh17 = assertionForReview(11);
+    assert.equal(
+      await runCli(["inspect", mh17.id, "--json"], inspect.io),
       0,
     );
-    assert.equal(JSON.parse(inspect.out.join("\n")).result.review_item, 11);
+    const inspected = JSON.parse(inspect.out.join("\n")).result;
+    assert.equal(inspected.review_item, 11);
+    assert.equal(inspected.native_content, "not_loaded");
+    assert.match(inspected.native_content_notice, /not loaded or validated/);
+    assert.equal(inspected.assertion_bundle_sha256, trackedBundle.bundle_sha256);
+    assert.equal(inspected.benchmark_sha256, sha256(trackedBenchmark));
+    assert.equal(inspected.authority_provenance.authority_basis, "explicit_human_approval");
 
-    const mh17 = new RelationshipStore().assertion("relationship:icbe-ucdp:0011")!;
     const map = capture();
     assert.equal(await runCli(["map", mh17.source_ref, mh17.target_ref, "--json"], map.io), 0);
     const output = JSON.parse(map.out.join("\n"));
@@ -216,7 +261,16 @@ describe("Stage 3B relationship assertions", () => {
     assert.deepEqual(output.records, []);
     assert.deepEqual(output.receipt.native_records, []);
     assert.match(output.native_content_notice, /not loaded, validated, or returned/);
-    assert.deepEqual(output.receipt.assertion_ids, ["relationship:icbe-ucdp:0011"]);
+    assert.deepEqual(output.receipt.assertion_ids, [mh17.id]);
+
+    const emptyMap = new RelationshipStore().map("icbe:not-reviewed", "ucdp:not-reviewed");
+    assert.equal(emptyMap.assertions.length, 0);
+    assert.match(emptyMap.assertion_absence_notice ?? "", /does not assert.*not_related/i);
+    assert.match(emptyMap.assertion_absence_notice ?? "", /globally absent/i);
+
+    const emptySearch = new RelationshipStore().search({ assertion_id: "relationship:missing" });
+    assert.equal(emptySearch.assertions.length, 0);
+    assert.match(emptySearch.assertion_absence_notice ?? "", /does not assert.*not_related/i);
 
     const nativeFilter = capture();
     assert.equal(await runCli(["search", "--place", "Donbas", "--json"], nativeFilter.io), 1);
@@ -233,7 +287,7 @@ describe("Stage 3B relationship assertions", () => {
     const consumed = JSON.parse(execFileSync("python3", [consumer, outputPath], { encoding: "utf8" }));
     assert.equal(consumed.relationship_authority, true);
     assert.equal(consumed.native_content, "not_loaded");
-    assert.deepEqual(consumed.receipt.assertion_ids, ["relationship:icbe-ucdp:0011"]);
+    assert.deepEqual(consumed.receipt.assertion_ids, [assertionForReview(11).id]);
     assert.equal(consumed.assertions[0].dimensions.identity, "same");
   });
 
@@ -246,7 +300,7 @@ describe("Stage 3B relationship assertions", () => {
         [],
       );
       const store = new RelationshipStore({ nativeDataRoot: localNativeRoot });
-      const mh17 = store.assertion("relationship:icbe-ucdp:0011")!;
+      const mh17 = store.assertion(assertionForReview(11).id)!;
       const output = store.map(mh17.source_ref, mh17.target_ref);
       assert.equal(output.native_content, "loaded_and_validated");
       assert.equal(output.records.length, 2);

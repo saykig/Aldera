@@ -46,7 +46,7 @@ The non-authoritative Stage 3A human-review benchmark preserves only:
 - the exact human note where one was supplied; and
 - the candidate status and reproducibility metadata already present in the benchmark.
 
-Stage 3B must not invent or attribute a human rationale, `meaning_preserved`, `meaning_lost`, uncertainty explanation, or other semantic interpretation. An assertion may carry the exact human note as `human_note` when present. For v0.1, `rationale`, `meaning_preserved`, `meaning_lost`, and `uncertainty_note` are optional and must be absent unless explicit reviewed evidence supports them. If they are added later, their own evidence and provenance must distinguish them from the Stage 3A dimensional judgments.
+Stage 3B must not invent or attribute a human rationale, semantic preservation/loss judgment, uncertainty explanation, or other semantic interpretation. An assertion may carry the exact human note as `human_note` when present. The v0.1 schema does not include `rationale`, `meaning_preserved`, `meaning_lost`, or `uncertainty_note`; a later schema may introduce them only with their own explicit evidence and provenance.
 
 The tracked `human-review-benchmark.json` remains non-authoritative evaluation evidence and never becomes a mapping or relationship-assertion bundle. Stage 3B creates a separate explicit, tracked, sanitized relationship-assertion bundle. A deliberate build or authoring step may mechanically copy the exact reviewed dimension values and human notes into that bundle, but the resulting bundle must be reviewed and committed as its own authority. There is no runtime, implicit, or silent promotion of the benchmark into mapping authority.
 
@@ -67,13 +67,13 @@ Stage 3B must include:
 - an explicit relationship schema version;
 - an explicit assertion-bundle version;
 - a deterministic assertion-bundle hash computed from canonical bundle content;
-- stable, unique assertion IDs that do not change merely because presentation order changes;
+- stable, unique assertion IDs derived from a bounded SHA-256 digest of the exact ordered source and target refs, independent of benchmark worksheet numbering or presentation order;
 - provenance binding to the exact tracked Stage 3A human-review benchmark path and deterministic benchmark hash;
 - map and search receipts that bind the relationship schema version, assertion-bundle version, exact assertion-bundle hash, normalized parameters, returned opaque refs and native hashes when native records are loaded, returned assertion IDs, and receipt hash;
 - deterministic assertion ordering by stable assertion ID and deterministic record ordering by opaque source reference; and
 - a Python standard-library independent-consumer test that reads saved machine-readable relationship output without importing Aldera or knowing ICBe/UCDP native schemas.
 
-The assertion bundle is the relationship authority; the benchmark hash in provenance identifies the human-review evidence from which its reviewed dimensions were transcribed. Changing the benchmark or assertion bundle changes the appropriate bound hash and receipt.
+The assertion bundle is the relationship authority; explicit authority provenance records deliberate human approval, its date, and the exact benchmark hash. The benchmark hash identifies the human-review evidence from which the reviewed dimensions were transcribed. Changing the benchmark or assertion bundle changes the appropriate bound hash and receipt.
 
 ## Real-data reconstruction boundary
 

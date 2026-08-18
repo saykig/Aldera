@@ -47,7 +47,7 @@ Every machine-readable response declares `format_version: "0.1"`. A Python stand
 - Explicit ICBe and UCDP adapters read only the native fields needed for candidate discovery; their transient views are never returned as canonical events.
 - Candidate pairs carry explicit evidence, `mapping_authority: false`, no relationship type, and no numeric confidence.
 - Candidate receipts bind the exact source bundles, artifact hashes, candidate-contract identity/hash, normalized parameters, ordered native refs/hashes, ordered candidates, and a deterministic receipt hash.
-- The separate Stage 3B assertion bundle contains exactly the four reviewed dimensions, stable ICBe/UCDP refs, exact supplied human notes, review provenance, versions, and a deterministic canonical bundle hash.
+- The separate Stage 3B assertion bundle contains exactly the four reviewed dimensions, stable ICBe/UCDP refs, exact supplied human notes, explicit human-approval provenance, versions, and a deterministic canonical bundle hash. Assertion IDs derive from the exact ordered endpoint refs rather than worksheet numbering.
 - Relationship map/search receipts bind the assertion schema/bundle, exact benchmark hash, normalized parameters, assertion IDs, opaque refs, and native hashes only when reconstructed records were actually loaded.
 
 The repository tracks source metadata, hashes, and the sanitized Stage 3A human-review benchmark. Native content and reconstructive review output remain under gitignored `data/local/`.
@@ -58,11 +58,13 @@ More detail is in [docs/architecture.md](docs/architecture.md), [docs/stage3a.md
 
 `aldera inspect [target]` inspects tracked relationship metadata or assertions on a clean clone, and opaque native source references when reconstructed bundles are available.
 
-`aldera validate` validates the relationship schema, bundle hash, benchmark provenance, exact transcription, stable IDs/refs, and ordering on a clean clone. With `--data-dir`, it additionally validates reconstructed endpoint records and hashes.
+`aldera validate` validates the relationship schema, bundle hash, benchmark and authority provenance, exact transcription, stable IDs/refs, and ordering on a clean clone. With `--data-dir`, it additionally validates reconstructed endpoint records and hashes. Failed native loading or validation reports `loaded_but_invalid`, never `loaded_and_validated`.
 
 `aldera map <source> [target]` returns reviewed relationship assertions from tracked metadata. It never requires candidate prioritization.
 
 `aldera search` filters tracked relationship assertions by dimensions or opaque refs. `--candidate-pairs` selects the unchanged deterministic, non-authoritative Stage 3A mode.
+
+Empty relationship map/search results explicitly state that absence from this pinned bundle does not assert `not_related`, incompatibility, no counterpart, or global absence.
 
 ## Scope
 

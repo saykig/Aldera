@@ -39,11 +39,12 @@ export interface RelationshipAssertion {
   target_ref: string;
   dimensions: RelationshipDimensions;
   human_note?: string;
-  rationale?: string;
-  meaning_preserved?: string[];
-  meaning_lost?: string[];
-  uncertainty_note?: string;
 }
+
+export type NativeContentState =
+  | "not_loaded"
+  | "loaded_and_validated"
+  | "loaded_but_invalid";
 
 export interface RelationshipNativeSourceSet {
   id: string;
@@ -58,6 +59,11 @@ export interface RelationshipAssertionBundleBody {
   schema_version: string;
   assertion_bundle_version: string;
   relationship_authority: true;
+  authority_provenance: {
+    authority_basis: "explicit_human_approval";
+    approval_date: string;
+    benchmark_sha256: string;
+  };
   comparison: { source_collection: "icbe"; target_collection: "ucdp" };
   benchmark_provenance: {
     path: string;
@@ -95,7 +101,7 @@ export interface RelationshipReceiptBody {
   parameters: { command: "map" | "search" } & Record<string, unknown>;
   assertion_ids: string[];
   opaque_refs: string[];
-  native_content: "not_loaded" | "loaded_and_validated";
+  native_content: NativeContentState;
   native_records: Array<{ ref: string; native_sha256: string }>;
 }
 
@@ -107,8 +113,9 @@ export interface RelationshipOutput {
   format_version: string;
   mode: "relationship_assertions";
   relationship_authority: true;
-  native_content: "not_loaded" | "loaded_and_validated";
+  native_content: NativeContentState;
   native_content_notice: string;
+  assertion_absence_notice?: string;
   assertions: RelationshipAssertion[];
   records: CandidateSourceRecord[];
   receipt: RelationshipReceipt;

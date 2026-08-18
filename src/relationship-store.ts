@@ -100,6 +100,11 @@ export function relationshipBundleHash(bundle: RelationshipAssertionBundle): str
   return sha256(relationshipBundleBody(bundle));
 }
 
+export function relationshipAssertionId(sourceRef: string, targetRef: string): string {
+  const digest = sha256({ source_ref: sourceRef, target_ref: targetRef }).slice("sha256:".length);
+  return `relationship:icbe-ucdp:${digest.slice(0, 24)}`;
+}
+
 export function defaultRelationshipPaths(): { bundlePath: string; benchmarkPath: string } {
   return {
     bundlePath: locateTracked(TRACKED_RELATIONSHIP_BUNDLE_PATH),
@@ -234,11 +239,15 @@ function loadNativeRecords(
 }
 
 export function validateRelationshipArtifacts(
-  bundle: RelationshipAssertionBundle,
+  candidateBundle: unknown,
   benchmark: HumanBenchmark,
   nativeDataRoot?: string,
 ): RelationshipDiagnostic[] {
-  const diagnostics = schemaDiagnostics(bundle);
+  const diagnostics = schemaDiagnostics(candidateBundle);
+  if (diagnostics.length > 0) {
+    return diagnostics.sort((a, b) => `${a.path}:${a.code}`.localeCompare(`${b.path}:${b.code}`));
+  }
+  const bundle = candidateBundle as RelationshipAssertionBundle;
   if (
     benchmark.kind !== "human_review_benchmark" ||
     benchmark.mapping_authority !== false ||
@@ -277,6 +286,24 @@ export function validateRelationshipArtifacts(
         "ALD-REL-REVIEW-DATE",
         "benchmark_provenance/review_date",
         "review date does not match the pinned benchmark",
+      ),
+    );
+  }
+  if (bundle.authority_provenance.benchmark_sha256 !== benchmarkHash) {
+    diagnostics.push(
+      error(
+        "ALD-REL-AUTHORITY-BENCHMARK-HASH",
+        "authority_provenance/benchmark_sha256",
+        `authority provenance must bind benchmark hash ${benchmarkHash}`,
+      ),
+    );
+  }
+  if (bundle.authority_provenance.approval_date !== benchmark.review_date) {
+    diagnostics.push(
+      error(
+        "ALD-REL-AUTHORITY-DATE",
+        "authority_provenance/approval_date",
+        "authority approval date does not match the reviewed and approved Stage 3A benchmark date",
       ),
     );
   }
@@ -338,22 +365,8 @@ export function validateRelationshipArtifacts(
       );
       continue;
     }
-    const expectedId = `relationship:icbe-ucdp:${String(item.review_item).padStart(4, "0")}`;
+    const expectedId = relationshipAssertionId(item.pair.icbe_ref, item.pair.ucdp_ref);
     const expectedNote = item.human_judgment.note ?? undefined;
-    if (
-      assertion.rationale !== undefined ||
-      assertion.meaning_preserved !== undefined ||
-      assertion.meaning_lost !== undefined ||
-      assertion.uncertainty_note !== undefined
-    ) {
-      diagnostics.push(
-        error(
-          "ALD-REL-UNSUPPORTED-SEMANTICS",
-          assertion.id,
-          "the Stage 3A review did not supply rationale, meaning-preservation/loss, or uncertainty-note evidence",
-        ),
-      );
-    }
     if (
       assertion.id !== expectedId ||
       assertion.source_ref !== item.pair.icbe_ref ||
@@ -481,6 +494,14 @@ export class RelationshipStore {
       native_content_notice: this.nativeRecords
         ? "Native endpoint records were loaded from reconstructed bundles and their exact hashes were validated."
         : "Metadata-only output: native ICBe/UCDP content was not loaded, validated, or returned.",
+      ...(orderedAssertions.length === 0
+        ? {
+            assertion_absence_notice:
+              command === "map"
+                ? "No reviewed relationship assertion exists for these references in this pinned bundle. This does not assert that the records are not_related, incompatible, lack a counterpart, or are globally absent."
+                : "No reviewed relationship assertion matches this search in this pinned bundle. This does not assert that any records are not_related, incompatible, lack a counterpart, or are globally absent.",
+          }
+        : {}),
       assertions: orderedAssertions,
       records,
       receipt: { ...receiptBody, receipt_sha256: sha256(receiptBody) },

@@ -57,10 +57,10 @@ Receipts contain no timestamp, randomness, filesystem path, or consumer identity
 ## Current CLI behavior
 
 - `inspect` reads tracked relationship-bundle/assertion metadata, and source records when reconstructed ICBe/UCDP bundles are supplied.
-- `validate` checks the tracked relationship schema, hashes, provenance, transcription, refs, IDs, and ordering; with local data it also checks native bundles and endpoints.
+- `validate` checks the tracked relationship schema, hashes, provenance, transcription, refs, IDs, and ordering; with local data it also checks native bundles and endpoints and reports invalid native input distinctly from validated input.
 - `search` filters authoritative relationship metadata by dimensions or refs. Native place/date/actor filters require reconstructed bundles.
 - `search --candidate-pairs` runs the unchanged Stage 3A candidate contract. Place and actor filtering use deterministic Unicode-normalized matching; date filtering uses inclusive interval overlap.
-- `map` returns separately reviewed relationship assertions and never promotes candidates.
+- `map` returns separately reviewed relationship assertions and never promotes candidates. An empty map/search result is bundle absence, not a claim of unrelatedness, incompatibility, no counterpart, or global absence.
 
 Datasets are fixed to the current ICBe/UCDP comparison. Records, pair evaluations, candidates, and receipt arrays use deterministic lexical ordering.
 

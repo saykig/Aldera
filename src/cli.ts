@@ -1,8 +1,16 @@
 import { parseArgs } from "node:util";
+import { resolve } from "node:path";
 import { AlderaStore, normalizeDatasets, normalizeRelation } from "./store.js";
+import { CandidateStore } from "./candidate-store.js";
 import { validateStore } from "./validation.js";
 import { CLI_FORMAT_VERSION } from "./types.js";
-import type { MappingAssertion, SearchQuery, SearchResponse } from "./types.js";
+import type {
+  CandidateQuery,
+  CandidateSearchResponse,
+  MappingAssertion,
+  SearchQuery,
+  SearchResponse,
+} from "./types.js";
 
 export interface CliIO {
   out(line: string): void;
@@ -23,6 +31,7 @@ const USAGE = [
   "  aldera map <source-ref> [target-ref] [--json] [--data-dir <path>]",
   "  aldera search [--place <text>] [--from <date>] [--to <date>]",
   "                [--datasets ucdp,acled] [--actor <text>] [--relation <relation>]",
+  "                [--candidate-pairs --datasets icbe,ucdp]",
   "                [--source-id <id>] [--json] [--data-dir <path>]",
   "",
   "Relations: close, related, incompatible, unmapped",
@@ -223,6 +232,7 @@ function runSearch(args: readonly string[], io: CliIO): number {
       actor: { type: "string" },
       relation: { type: "string" },
       "source-id": { type: "string" },
+      "candidate-pairs": { type: "boolean", default: false },
     },
     allowPositionals: false,
   });
@@ -233,6 +243,32 @@ function runSearch(args: readonly string[], io: CliIO): number {
   const place = normalizedText(values.place);
   const actor = normalizedText(values.actor);
   const sourceId = normalizedText(values["source-id"]);
+  if (values["candidate-pairs"]) {
+    if (relation || sourceId) {
+      throw new Error("candidate mode does not accept --relation or --source-id");
+    }
+    const datasets = (values.datasets ?? "icbe,ucdp")
+      .split(",")
+      .map((dataset) => dataset.trim().toLowerCase())
+      .filter(Boolean);
+    const allowed = new Set(["icbe", "ucdp"]);
+    if (datasets.some((dataset) => !allowed.has(dataset))) {
+      throw new Error("candidate mode currently supports only ICBe and UCDP");
+    }
+    const query: Partial<CandidateQuery> = {
+      candidate_pairs: true,
+      datasets: [...new Set(datasets)].sort() as Array<"icbe" | "ucdp">,
+      ...(place ? { place } : {}),
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+      ...(actor ? { actor } : {}),
+    };
+    const dataDirectory = values["data-dir"] ?? resolve(process.cwd(), "data/local/stage3a/bundles");
+    const response = new CandidateStore(dataDirectory).search(query);
+    if (values.json) outputJson(response, io);
+    else printCandidateSearch(response, io);
+    return 0;
+  }
   const query: SearchQuery = {
     datasets: normalizeDatasets(values.datasets),
     ...(place ? { place } : {}),
@@ -246,6 +282,38 @@ function runSearch(args: readonly string[], io: CliIO): number {
   if (values.json) outputJson(response, io);
   else printSearch(response, io);
   return 0;
+}
+
+function printCandidateSearch(response: CandidateSearchResponse, io: CliIO): void {
+  io.out(`Candidate receipt ${response.receipt.receipt_sha256}`);
+  io.out(
+    `Contract ${response.receipt.candidate_contract.id}@${response.receipt.candidate_contract.version} ${response.receipt.candidate_contract.sha256}`,
+  );
+  io.out("Candidate pairs are non-authoritative and are not mapping assertions.");
+  io.out(`Native records (${response.records.length}):`);
+  for (const record of response.records) io.out(`  ${record.ref}  ${record.native_sha256}`);
+  io.out(`Candidate pairs (${response.candidate_pairs.length}):`);
+  for (const pair of response.candidate_pairs) {
+    io.out(`  ${pair.icbe_ref}  ~  ${pair.ucdp_ref}  [${pair.reasons.join(", ")}]`);
+    const temporal = pair.reason_evidence.temporal;
+    io.out(
+      `    dates: ICBe ${temporal.icbe.native_values.map(({ field, value }) => `${field}=${value}`).join("; ")} -> ${temporal.icbe.interpreted_from}..${temporal.icbe.interpreted_to} (${temporal.icbe.precision}); UCDP ${temporal.ucdp.native_values.map(({ field, value }) => `${field}=${value}`).join("; ")} -> ${temporal.ucdp.interpreted_from}..${temporal.ucdp.interpreted_to}`,
+    );
+    for (const [label, aliases] of [
+      ["geographic context", pair.reason_evidence.geographic_context],
+      ["localities", pair.reason_evidence.localities],
+      ["actors", pair.reason_evidence.actors],
+    ] as const) {
+      for (const alias of aliases) {
+        io.out(
+          `    ${label}/${alias.key}: ICBe ${alias.icbe_native_values.map(({ field, value }) => `${field}=${value}`).join("; ")}  ~  UCDP ${alias.ucdp_native_values.map(({ field, value }) => `${field}=${value}`).join("; ")}`,
+        );
+      }
+    }
+  }
+  io.out(`Not prioritized (${response.not_prioritized_refs.length}):`);
+  for (const ref of response.not_prioritized_refs) io.out(`  ${ref}`);
+  io.out(response.no_candidate_notice);
 }
 
 function printSearch(response: SearchResponse, io: CliIO): void {

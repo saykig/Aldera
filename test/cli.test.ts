@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { runCli, type CliIO } from "../src/cli.js";
 
 function capture(): { io: CliIO; out: string[]; err: string[] } {
@@ -7,6 +9,10 @@ function capture(): { io: CliIO; out: string[]; err: string[] } {
   const err: string[] = [];
   return { io: { out: (line) => out.push(line), err: (line) => err.push(line) }, out, err };
 }
+
+const localStage3aBundles = fileURLToPath(
+  new URL("../data/local/stage3a/bundles", import.meta.url),
+);
 
 describe("aldera CLI", () => {
   test("validate reports a clean fixture", async () => {
@@ -133,4 +139,35 @@ describe("aldera CLI", () => {
       "aldera:close",
     ]);
   });
+
+  test(
+    "candidate-pair search is explicitly non-authoritative",
+    { skip: !existsSync(localStage3aBundles) },
+    async () => {
+      const captured = capture();
+      assert.equal(
+        await runCli(
+          [
+            "search",
+            "--candidate-pairs",
+            "--datasets",
+            "icbe,ucdp",
+            "--data-dir",
+            localStage3aBundles,
+            "--json",
+          ],
+          captured.io,
+        ),
+        0,
+      );
+      const result = JSON.parse(captured.out.join("\n"));
+      assert.equal(result.format_version, "0.1");
+      assert.equal(result.mode, "candidate_pairs");
+      assert.equal(result.mapping_authority, false);
+      assert.equal(result.records.length, 22);
+      assert.equal(result.candidate_pairs.length, 7);
+      assert.deepEqual(result.mappings, []);
+      assert.equal(result.receipt.search_contract_version, "0.4");
+    },
+  );
 });

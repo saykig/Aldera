@@ -1,8 +1,10 @@
 # Aldera
 
-Aldera is an experimental interoperability layer for research data. Its first proving ground asks whether UCDP and ACLED conflict-event representations can be connected while both datasets remain native and authoritative.
+Aldera is an experimental interoperability layer for research data. Its synthetic proving ground connects UCDP and ACLED representations; Stage 3A adds non-authoritative candidate discovery between real ICBe and UCDP GED records while both datasets remain native and authoritative.
 
 Aldera asks the following: Where did this come from? What does it measure? What can it legitimately be compared with? Where are the representations commensurable, partially commensurable, or incompatible? What information is lost in moving between them?
+
+Aldera does **not** define a universal event ontology and does not convert records into an “Aldera format.” It owns only dataset/version descriptors, small explicit search adapters, separate candidate or mapping objects, provenance, validation, and deterministic evidence receipts.
 
 ## Try it
 
@@ -17,11 +19,17 @@ pnpm aldera map ucdp:UCDP-SYN-001 acled:ACLED-SYN-001
 pnpm aldera search --place Crimea --from 2014-02-01 --to 2014-03-31 --datasets ucdp,acled
 ```
 
+After acquiring and preparing the pinned Stage 3A sources locally as described in [docs/stage3a.md](docs/stage3a.md):
+
+```sh
+pnpm aldera search --candidate-pairs --datasets icbe,ucdp --json
+```
+
 Every command accepts `--json`. Installed packages expose the same interface as `aldera`.
 
 The JSON envelope declares `format_version: "0.1"`. A standard-library-only example consumer is available at `test/interop/consume_search.py`; it reads native references and mapping relations without importing Aldera or understanding either native dataset schema.
 
-The included records are explicitly synthetic and must not be cited as UCDP or ACLED research data. They cover one close match, one related/non-equivalent pair, one incompatibility, and one explicitly unmapped source record.
+The committed UCDP/ACLED records are explicitly synthetic and must not be cited as research data. Real Stage 3A artifacts and reconstructive review output stay under gitignored `data/local/`; the repository contains source metadata, hashes, and a sanitized human-review benchmark.
 
 ## Data model
 
@@ -50,4 +58,8 @@ More detail is in [docs/architecture.md](docs/architecture.md).
 
 `aldera map <source> [target]` is read-only and inspects assertions involving the source or between the specified records.
 
-`aldera search` supports dataset, place, date range, actor, relation, and source-identifier filters. Pass another bundle with `--data-dir`.
+`aldera search` supports dataset, place, date range, actor, relation, and source-identifier filters. `--candidate-pairs` selects the distinct non-authoritative ICBe/UCDP mode; candidates never become mapping assertions. Pass another bundle with `--data-dir`.
+
+## Scope
+
+This bounded proving ground has no graphical frontend, database, network ingestion, policy evaluator, DSL, generic adapter framework, automated mapping classifier, or inherited product corpus.

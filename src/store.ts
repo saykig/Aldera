@@ -34,8 +34,8 @@ function readJson<T>(path: string): T {
 }
 
 function contains(haystacks: readonly string[], needle: string): boolean {
-  const normalized = needle.toLocaleLowerCase();
-  return haystacks.some((value) => value.toLocaleLowerCase().includes(normalized));
+  const normalized = needle.toLowerCase();
+  return haystacks.some((value) => value.toLowerCase().includes(normalized));
 }
 
 function normalizeQuery(query: SearchQuery): SearchQuery {
@@ -182,7 +182,7 @@ export class AlderaStore {
 export function normalizeDatasets(value: string | undefined): DatasetId[] {
   const requested = (value ?? "ucdp,acled")
     .split(",")
-    .map((dataset) => dataset.trim().toLocaleLowerCase())
+    .map((dataset) => dataset.trim().toLowerCase())
     .filter(Boolean);
   const allowed = new Set<DatasetId>(["ucdp", "acled"]);
   for (const dataset of requested) {

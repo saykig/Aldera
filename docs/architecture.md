@@ -6,6 +6,8 @@
 UCDP native records  ─┐
                       ├── Aldera descriptors, assertions, validation, search receipts
 ACLED native records ─┘
+
+ICBe native records ───── Aldera non-authoritative candidates and candidate receipts
 ```
 
 Aldera source bundles use an envelope only to attach a stable reference, version, native identifier, and byte-independent canonical hash. The `native` object is the source representation. Two explicit adapters read the minimum searchable native fields:
@@ -13,7 +15,11 @@ Aldera source bundles use an envelope only to attach a stable reference, version
 - the UCDP adapter reads `id`, `country`, `adm_1`, `where_prec`, `date_start`, `date_end`, `side_a`, and `side_b`;
 - the ACLED adapter reads `event_id_cnty`, `country`, `admin1`, `location`, `event_date`, and the four actor/associated-actor fields.
 
-The adapters return only a transient search view used for filtering. Search results contain the untouched native object, never that view. The views are separate implementations because two datasets do not yet justify a generic projection framework.
+Stage 3A adds an explicit ICBe adapter for its published event table. It reads crisis/sentence coordinates, native earliest/latest date components, `interact_location`, the narrative sentence, and the five actor fields needed for candidate discovery. Because the native table has no event-ID column, its envelope uses a source locator that binds the exact dataset/artifact/table hashes, row, and native crisis/sentence coordinates rather than pretending that ICBe published an identifier. Candidate normalization and prioritization live in one small versioned, hashed ICBe/UCDP contract; coarse dates remain reviewable but require independent locality and actor signals before they are prioritized.
+
+The adapters return only a transient search view used for filtering. Search results contain the untouched native object, never that view. The three adapters remain separate implementations; repeated behavior is documented rather than extracted into a generic framework.
+
+Candidate pairs are structurally separate from mapping assertions. They carry explicit reasons/evidence, `mapping_authority: false`, no relation, and no confidence score. See [stage3a.md](stage3a.md) for the bounded real-data semantics.
 
 ## Mapping semantics
 

@@ -56,13 +56,14 @@ Receipts contain no timestamp, randomness, filesystem path, or consumer identity
 
 ## Current CLI behavior
 
-- `inspect` reads current dataset metadata or a source record from reconstructed ICBe/UCDP bundles.
-- `validate` checks source-bundle identity, unchanged native hashes, ICBe locators, UCDP IDs, and the shared selection window.
-- `search --candidate-pairs` runs the Stage 3A candidate contract. Place and actor filtering use deterministic Unicode-normalized matching; date filtering uses inclusive interval overlap.
-- `map` reports that no relationship-assertion layer exists before Stage 3B. It does not manufacture or promote mappings.
+- `inspect` reads tracked relationship-bundle/assertion metadata, and source records when reconstructed ICBe/UCDP bundles are supplied.
+- `validate` checks the tracked relationship schema, hashes, provenance, transcription, refs, IDs, and ordering; with local data it also checks native bundles and endpoints and reports invalid native input distinctly from validated input.
+- `search` filters authoritative relationship metadata by dimensions or refs. Native place/date/actor filters require reconstructed bundles.
+- `search --candidate-pairs` runs the unchanged Stage 3A candidate contract. Place and actor filtering use deterministic Unicode-normalized matching; date filtering uses inclusive interval overlap.
+- `map` returns separately reviewed relationship assertions and never promotes candidates. An empty map/search result is bundle absence, not a claim of unrelatedness, incompatibility, no counterpart, or global absence.
 
 Datasets are fixed to the current ICBe/UCDP comparison. Records, pair evaluations, candidates, and receipt arrays use deterministic lexical ordering.
 
 ## Relationship boundary
 
-No real relationship-assertion schema or bundle exists on `main` before Stage 3B. The proposed Stage 3B layer is separate from candidate discovery and will use stable opaque source refs rather than a closed dataset enum or shared native-ID assumption. See [stage3b-design.md](stage3b-design.md).
+Stage 3B v0.1 implements the reviewed ICBe ↔ UCDP relationship-assertion layer separately from candidate discovery and uses stable opaque source refs rather than a closed dataset enum or shared native-ID assumption. Its tracked sanitized assertion bundle is relationship authority; the Stage 3A benchmark remains non-authoritative evidence. Metadata-only inspection, validation, mapping, and search work without native data. Native-field filters and endpoint-content validation require reconstructed pinned bundles. See [stage3b.md](stage3b.md) and [stage3b-design.md](stage3b-design.md).

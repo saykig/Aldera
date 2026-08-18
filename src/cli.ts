@@ -3,7 +3,21 @@ import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { CandidateStore } from "./candidate-store.js";
 import { ICBE_UCDP_CANDIDATE_CONTRACT_IDENTITY } from "./candidate-contract.js";
+import {
+  RelationshipStore,
+  loadRelationshipValidation,
+  normalizeEquivalenceSafety,
+  normalizeRelationshipIdentity,
+  normalizeRelationshipRelatedness,
+  normalizeRelationshipScope,
+} from "./relationship-store.js";
 import { CLI_FORMAT_VERSION } from "./types.js";
+import type {
+  RelationshipAssertion,
+  RelationshipAssertionBundle,
+  RelationshipOutput,
+  RelationshipSearchQuery,
+} from "./relationship-types.js";
 import type {
   CandidateDatasetId,
   CandidateQuery,
@@ -24,15 +38,22 @@ const USAGE = [
   "aldera — ICBe ↔ UCDP real-data interoperability proving ground",
   "",
   "Usage:",
-  "  aldera inspect [<icbe|ucdp|source-ref>] [--json] [--data-dir <path>]",
-  "  aldera validate [--json] [--data-dir <path>]",
-  "  aldera map <source-ref> [target-ref] [--json] [--data-dir <path>]",
-  "  aldera search [--candidate-pairs] [--place <text>] [--from <date>] [--to <date>]",
-  "                [--datasets icbe,ucdp] [--actor <text>]",
-  "                [--json] [--data-dir <path>]",
+  "  aldera inspect [<relationships|assertion-id|icbe|ucdp|source-ref>] [--json]",
+  "                 [--data-dir <stage3a-root>]",
+  "  aldera validate [--json] [--data-dir <stage3a-root>]",
+  "  aldera map <source-ref> [target-ref] [--json] [--data-dir <stage3a-root>]",
+  "  aldera search [--identity <value>] [--relatedness <value>] [--scope <value>]",
+  "                [--equivalence-safety <value>] [--assertion-id <id>]",
+  "                [--source-ref <ref>] [--target-ref <ref>] [--json]",
+  "                [--place <text>] [--from <date>] [--to <date>] [--actor <text>]",
+  "                [--data-dir <stage3a-root>]",
+  "  aldera search --candidate-pairs [--place <text>] [--from <date>] [--to <date>]",
+  "                [--datasets icbe,ucdp] [--actor <text>] [--json]",
+  "                --data-dir <stage3a-bundles>",
   "",
-  "Current searches expose non-authoritative candidate pairs only.",
-  "Native source bundles must be reconstructed locally; see docs/stage3a.md.",
+  "Relationship metadata works from the tracked assertion bundle on a clean clone.",
+  "Stage 3A search results remain non-authoritative candidate pairs.",
+  "Native-field filters and candidate discovery require reconstructed source bundles.",
 ].join("\n");
 
 function commonOptions() {
@@ -59,8 +80,11 @@ function normalizedDate(value: string | undefined, flag: string): string | undef
   return normalized;
 }
 
-function currentDataDirectory(value: string | undefined): string {
-  const directory = resolve(value ?? resolve(process.cwd(), "data/local/stage3a/bundles"));
+function candidateDataDirectory(value: string | undefined): string {
+  const requested = resolve(value ?? resolve(process.cwd(), "data/local/stage3a/bundles"));
+  const directory = existsSync(resolve(requested, "icbe.json"))
+    ? requested
+    : resolve(requested, "bundles");
   if (!existsSync(resolve(directory, "icbe.json")) || !existsSync(resolve(directory, "ucdp.json"))) {
     throw new Error(
       `ICBe/UCDP source bundles are not available at ${directory}; reconstruct the pinned local bundles described in docs/stage3a.md or pass --data-dir`,
@@ -69,8 +93,14 @@ function currentDataDirectory(value: string | undefined): string {
   return directory;
 }
 
-function currentStore(dataDirectory: string | undefined): CandidateStore {
-  return new CandidateStore(currentDataDirectory(dataDirectory));
+function candidateStore(dataDirectory: string | undefined): CandidateStore {
+  return new CandidateStore(candidateDataDirectory(dataDirectory));
+}
+
+function relationshipStore(dataDirectory: string | undefined): RelationshipStore {
+  return new RelationshipStore({
+    ...(dataDirectory ? { nativeDataRoot: dataDirectory } : {}),
+  });
 }
 
 function normalizeCurrentDatasets(value: string | undefined): CandidateDatasetId[] {
@@ -126,6 +156,21 @@ export async function runCli(argv: readonly string[], io: CliIO = processIO): Pr
   }
 }
 
+function relationshipMetadata(store: RelationshipStore) {
+  return {
+    kind: "relationship_assertion_bundle",
+    schema_version: store.bundle.schema_version,
+    assertion_bundle_version: store.bundle.assertion_bundle_version,
+    bundle_sha256: store.bundle.bundle_sha256,
+    relationship_authority: store.bundle.relationship_authority,
+    authority_provenance: store.bundle.authority_provenance,
+    comparison: store.bundle.comparison,
+    benchmark_provenance: store.bundle.benchmark_provenance,
+    assertion_count: store.bundle.assertions.length,
+    native_content: store.nativeRecords ? "loaded_and_validated" : "not_loaded",
+  };
+}
+
 function runInspect(args: readonly string[], io: CliIO): number {
   const { values, positionals } = parseArgs({
     args: [...args],
@@ -133,30 +178,49 @@ function runInspect(args: readonly string[], io: CliIO): number {
     allowPositionals: true,
   });
   if (positionals.length > 1) throw new Error("inspect accepts at most one target");
-  const store = currentStore(values["data-dir"]);
+  const store = relationshipStore(values["data-dir"]);
   const target = positionals[0];
   let result: unknown;
-  if (!target) {
-    result = {
-      product: "Aldera",
-      empirical_direction: "icbe-ucdp",
-      current_mode: "non_authoritative_candidate_discovery",
-      datasets: (["icbe", "ucdp"] as const).map((dataset) => datasetSummary(store, dataset)),
-      candidate_contract: ICBE_UCDP_CANDIDATE_CONTRACT_IDENTITY,
-      native_record_count: store.records().length,
-      relationship_assertion_count: 0,
-    };
-  } else if (target === "icbe" || target === "ucdp") {
-    result = datasetSummary(store, target);
+  if (!target || target === "relationships") {
+    result = relationshipMetadata(store);
   } else {
-    const record = store.record(target);
-    if (!record) throw new Error(`No current dataset or source record named ${target}`);
-    result = {
-      kind: "native_source_record",
-      ...record,
-      mapping_authority: false,
-      relationship_assertions: [],
-    };
+    const assertion = store.assertion(target);
+    if (assertion) {
+      const nativeContent = store.nativeRecords ? "loaded_and_validated" : "not_loaded";
+      result = {
+        ...assertion,
+        relationship_authority: true,
+        authority_provenance: store.bundle.authority_provenance,
+        assertion_bundle_version: store.bundle.assertion_bundle_version,
+        assertion_bundle_sha256: store.bundle.bundle_sha256,
+        benchmark_sha256: store.bundle.benchmark_provenance.sha256,
+        native_content: nativeContent,
+        native_content_notice: store.nativeRecords
+          ? "Native endpoint records were loaded from reconstructed bundles and their exact hashes were validated."
+          : "Metadata-only assertion inspection: native endpoint content was not loaded or validated.",
+      };
+    } else if (target === "icbe" || target === "ucdp") {
+      if (!values["data-dir"]) {
+        throw new Error("native dataset inspection requires reconstructed bundles; pass --data-dir");
+      }
+      result = datasetSummary(candidateStore(values["data-dir"]), target);
+    } else {
+      if (!values["data-dir"]) {
+        throw new Error(
+          "opaque source-ref inspection requires reconstructed native bundles; assertion inspection works metadata-only",
+        );
+      }
+      const record = store.nativeRecord(target);
+      if (!record) throw new Error(`No assertion or reconstructed source record named ${target}`);
+      result = {
+        kind: "native_source_record",
+        ...record,
+        relationship_assertions: store
+          .assertions()
+          .filter(({ source_ref, target_ref }) => source_ref === target || target_ref === target)
+          .map(({ id }) => id),
+      };
+    }
   }
   if (values.json) outputJson({ format_version: CLI_FORMAT_VERSION, result }, io);
   else printInspect(result, io);
@@ -165,10 +229,16 @@ function runInspect(args: readonly string[], io: CliIO): number {
 
 function printInspect(result: unknown, io: CliIO): void {
   const item = result as Record<string, unknown>;
-  if (item.product === "Aldera") {
-    io.out("Aldera — ICBe ↔ UCDP");
-    io.out(`Native records: ${item.native_record_count}`);
-    io.out("Relationship assertions: 0 (Stage 3B is not implemented)");
+  if (item.kind === "relationship_assertion_bundle") {
+    io.out(
+      `Relationship assertions ${item.assertion_bundle_version}  ${item.bundle_sha256}  (${item.assertion_count})`,
+    );
+    io.out(`Native content: ${item.native_content}`);
+    return;
+  }
+  if (item.kind === "relationship_assertion") {
+    printRelationshipAssertion(item as unknown as RelationshipAssertion, io);
+    if (item.native_content_notice) io.out(String(item.native_content_notice));
     return;
   }
   if (item.kind === "native_source_dataset") {
@@ -188,29 +258,53 @@ function printInspect(result: unknown, io: CliIO): void {
 
 function runValidate(args: readonly string[], io: CliIO): number {
   const { values } = parseArgs({ args: [...args], options: commonOptions(), allowPositionals: false });
-  const store = currentStore(values["data-dir"]);
+  const validation = loadRelationshipValidation({
+    ...(values["data-dir"] ? { nativeDataRoot: values["data-dir"] } : {}),
+  });
+  const errors = validation.diagnostics.filter(({ severity }) => severity === "error");
+  const valid = errors.length === 0;
+  const nativeRequested = Boolean(values["data-dir"]);
+  const nativeContent = nativeRequested
+    ? valid
+      ? "loaded_and_validated"
+      : "loaded_but_invalid"
+    : "not_loaded";
+  const bundle = validation.bundle as Partial<RelationshipAssertionBundle>;
   const result = {
     format_version: CLI_FORMAT_VERSION,
-    valid: true,
-    empirical_direction: "icbe-ucdp",
-    candidate_contract: ICBE_UCDP_CANDIDATE_CONTRACT_IDENTITY,
-    dataset_versions: {
-      icbe: store.bundles.icbe.dataset_version,
-      ucdp: store.bundles.ucdp.dataset_version,
-    },
+    valid,
+    validation_mode: nativeRequested ? "metadata_and_native" : "metadata_only",
+    native_content: nativeContent,
+    relationship_schema_version: bundle.schema_version ?? null,
+    assertion_bundle_version: bundle.assertion_bundle_version ?? null,
+    assertion_bundle_sha256: bundle.bundle_sha256 ?? null,
+    benchmark_sha256: bundle.benchmark_provenance?.sha256 ?? null,
     checked: {
-      native_records: store.records().length,
-      relationship_assertions: 0,
+      relationship_assertions: bundle.assertions?.length ?? 0,
+      native_endpoint_occurrences: nativeRequested && valid
+        ? (bundle.assertions?.length ?? 0) * 2
+        : 0,
     },
-    notice:
-      "Candidate source integrity is valid. No relationship-assertion schema or bundle exists before Stage 3B.",
+    diagnostics: validation.diagnostics,
+    notice: nativeRequested
+      ? valid
+        ? "Relationship metadata and reconstructed native endpoint records were loaded and validated successfully."
+        : "Reconstructed native content was requested but loading or validation failed; no validated-native claim is made."
+      : "Metadata-only validation: native ICBe/UCDP content was not loaded or validated.",
   };
   if (values.json) outputJson(result, io);
   else {
-    io.out(`OK: ${result.checked.native_records} native ICBe/UCDP records validated.`);
+    io.out(
+      result.valid
+        ? `OK: ${result.checked.relationship_assertions} relationship assertions validated (${result.validation_mode}).`
+        : `INVALID: ${errors.length} error(s)`,
+    );
     io.out(result.notice);
+    for (const diagnostic of result.diagnostics) {
+      io.out(`  [${diagnostic.severity}] ${diagnostic.code} ${diagnostic.path}: ${diagnostic.message}`);
+    }
   }
-  return 0;
+  return result.valid ? 0 : 1;
 }
 
 function runMap(args: readonly string[], io: CliIO): number {
@@ -222,23 +316,10 @@ function runMap(args: readonly string[], io: CliIO): number {
   if (positionals.length < 1 || positionals.length > 2) {
     throw new Error("map requires a source reference and optionally a target reference");
   }
-  const store = currentStore(values["data-dir"]);
   const [source, target] = positionals as [string, string?];
-  if (!store.record(source)) throw new Error(`Unknown source record ${source}`);
-  if (target !== undefined && !store.record(target)) throw new Error(`Unknown target record ${target}`);
-  const result = {
-    format_version: CLI_FORMAT_VERSION,
-    mode: "relationship_assertions",
-    source_ref: source,
-    ...(target ? { target_ref: target } : {}),
-    relationship_assertions: [],
-    notice:
-      "No current relationship assertion exists. Candidate pairs are non-authoritative, and Stage 3B is not implemented.",
-  };
-  if (values.json) outputJson(result, io);
-  else {
-    io.out(result.notice);
-  }
+  const output = relationshipStore(values["data-dir"]).map(source, target);
+  if (values.json) outputJson(output, io);
+  else printRelationshipOutput(output, io);
   return 0;
 }
 
@@ -253,6 +334,13 @@ function runSearch(args: readonly string[], io: CliIO): number {
       datasets: { type: "string" },
       actor: { type: "string" },
       "candidate-pairs": { type: "boolean", default: false },
+      identity: { type: "string" },
+      relatedness: { type: "string" },
+      scope: { type: "string" },
+      "equivalence-safety": { type: "string" },
+      "assertion-id": { type: "string" },
+      "source-ref": { type: "string" },
+      "target-ref": { type: "string" },
     },
     allowPositionals: false,
   });
@@ -261,18 +349,82 @@ function runSearch(args: readonly string[], io: CliIO): number {
   const place = normalizedText(values.place);
   const actor = normalizedText(values.actor);
   if (from && to && from > to) throw new Error("--from must not be after --to");
-  const query: Partial<CandidateQuery> = {
-    candidate_pairs: true,
-    datasets: normalizeCurrentDatasets(values.datasets),
+
+  if (values["candidate-pairs"]) {
+    if (
+      values.identity ||
+      values.relatedness ||
+      values.scope ||
+      values["equivalence-safety"] ||
+      values["assertion-id"] ||
+      values["source-ref"] ||
+      values["target-ref"]
+    ) {
+      throw new Error("candidate mode does not accept relationship-assertion filters");
+    }
+    const query: Partial<CandidateQuery> = {
+      candidate_pairs: true,
+      datasets: normalizeCurrentDatasets(values.datasets),
+      ...(place ? { place } : {}),
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+      ...(actor ? { actor } : {}),
+    };
+    const response = candidateStore(values["data-dir"]).search(query);
+    if (values.json) outputJson(response, io);
+    else printCandidateSearch(response, io);
+    return 0;
+  }
+
+  if (values.datasets) throw new Error("--datasets is available only with --candidate-pairs");
+  const query: RelationshipSearchQuery = {
+    ...(normalizeRelationshipIdentity(values.identity)
+      ? { identity: normalizeRelationshipIdentity(values.identity)! }
+      : {}),
+    ...(normalizeRelationshipRelatedness(values.relatedness)
+      ? { relatedness: normalizeRelationshipRelatedness(values.relatedness)! }
+      : {}),
+    ...(normalizeRelationshipScope(values.scope)
+      ? { scope: normalizeRelationshipScope(values.scope)! }
+      : {}),
+    ...(normalizeEquivalenceSafety(values["equivalence-safety"])
+      ? { equivalence_safety: normalizeEquivalenceSafety(values["equivalence-safety"])! }
+      : {}),
+    ...(normalizedText(values["assertion-id"])
+      ? { assertion_id: normalizedText(values["assertion-id"])! }
+      : {}),
+    ...(normalizedText(values["source-ref"])
+      ? { source_ref: normalizedText(values["source-ref"])! }
+      : {}),
+    ...(normalizedText(values["target-ref"])
+      ? { target_ref: normalizedText(values["target-ref"])! }
+      : {}),
     ...(place ? { place } : {}),
     ...(from ? { from } : {}),
     ...(to ? { to } : {}),
     ...(actor ? { actor } : {}),
   };
-  const response = currentStore(values["data-dir"]).search(query);
-  if (values.json) outputJson(response, io);
-  else printCandidateSearch(response, io);
+  const output = relationshipStore(values["data-dir"]).search(query);
+  if (values.json) outputJson(output, io);
+  else printRelationshipOutput(output, io);
   return 0;
+}
+
+function printRelationshipAssertion(assertion: RelationshipAssertion, io: CliIO): void {
+  io.out(assertion.id);
+  io.out(`${assertion.source_ref}  →  ${assertion.target_ref}`);
+  io.out(
+    `identity=${assertion.dimensions.identity} relatedness=${assertion.dimensions.relatedness} scope=${assertion.dimensions.scope} equivalence_safety=${assertion.dimensions.equivalence_safety}`,
+  );
+  if (assertion.human_note) io.out(`Human note: ${assertion.human_note}`);
+}
+
+function printRelationshipOutput(output: RelationshipOutput, io: CliIO): void {
+  io.out(`Relationship receipt ${output.receipt.receipt_sha256}`);
+  io.out(output.native_content_notice);
+  if (output.assertion_absence_notice) io.out(output.assertion_absence_notice);
+  io.out(`Assertions (${output.assertions.length}):`);
+  for (const assertion of output.assertions) printRelationshipAssertion(assertion, io);
 }
 
 function printCandidateSearch(response: CandidateSearchResponse, io: CliIO): void {

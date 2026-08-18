@@ -1,0 +1,264 @@
+{
+  "schema_version": "0.1.0",
+  "assertion_bundle_version": "0.1.0",
+  "relationship_authority": true,
+  "authority_provenance": {
+    "authority_basis": "explicit_human_approval",
+    "approval_date": "2026-08-18",
+    "benchmark_sha256": "sha256:c3e68cb834fa21dda8656eb3207e50e541c35675274bf52390930de4d4c0eb2a"
+  },
+  "comparison": {
+    "source_collection": "icbe",
+    "target_collection": "ucdp"
+  },
+  "benchmark_provenance": {
+    "path": "fixtures/real/icbe-ucdp-stage3a/human-review-benchmark.json",
+    "sha256": "sha256:c3e68cb834fa21dda8656eb3207e50e541c35675274bf52390930de4d4c0eb2a",
+    "review_date": "2026-08-18"
+  },
+  "native_source_sets": [
+    {
+      "id": "stage3a-main",
+      "relative_directory": "bundles",
+      "bundles": {
+        "icbe": {
+          "version": "ICBe V1.1; Harvard Dataverse dataset version 1.0",
+          "sha256": "sha256:ec35b0dfb6451cde75b993901929c0808f66a7d0921bdde8de3b31dbab31c1f8"
+        },
+        "ucdp": {
+          "version": "UCDP GED Global 26.1",
+          "sha256": "sha256:76259090549925a00bf3675ed226429ac27d92ff1c10c18ba90c4ec7a64a9ee8"
+        }
+      }
+    },
+    {
+      "id": "stage3a-mh17-control",
+      "relative_directory": "mh17/bundles",
+      "bundles": {
+        "icbe": {
+          "version": "ICBe V1.1; Harvard Dataverse dataset version 1.0",
+          "sha256": "sha256:dddcca68da0cf7b1f4b056b83d6a7781165bfe24795d317d123e61aece35a86b"
+        },
+        "ucdp": {
+          "version": "UCDP GED Global 26.1",
+          "sha256": "sha256:c9b2701c0e546c530163b474c873fdc2d688cfe070c12a649df89b47e1647fda"
+        }
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:08063b906d27a976084e99f3",
+      "review_item": 9,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18422-crisis-471-sentence-33",
+      "target_ref": "ucdp:155086",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "target_broader",
+        "equivalence_safety": "unsafe_as_equivalent"
+      },
+      "human_note": "The ICBe action falls temporally and substantively inside the much broader UCDP conflict interval, but UCDP aggregates many lethal events across months rather than representing that single announcement/operation."
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:3a134c5f2ff3b865d9621942",
+      "review_item": 12,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+      "target_ref": "ucdp:407710",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "no_broader_narrower_asserted",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:3b262065c1756d41ab5e94f1",
+      "review_item": 13,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+      "target_ref": "ucdp:407714",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "no_broader_narrower_asserted",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:4a6b52911a33747553b4fcc6",
+      "review_item": 2,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18417-crisis-471-sentence-30",
+      "target_ref": "ucdp:395636",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "source_broader",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:525c2f8ac077ffbc8a62d2f5",
+      "review_item": 3,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18418-crisis-471-sentence-31",
+      "target_ref": "ucdp:395636",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "source_broader",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:53611ff435e21e953cf93d63",
+      "review_item": 11,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+      "target_ref": "ucdp:154679",
+      "dimensions": {
+        "identity": "same",
+        "relatedness": "related",
+        "scope": "no_broader_narrower_asserted",
+        "equivalence_safety": "safe_as_equivalent"
+      },
+      "human_note": "Both represent the MH17 downing, while preserving different native details."
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:6be7a1750f91443288796d45",
+      "review_item": 5,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18422-crisis-471-sentence-33",
+      "target_ref": "ucdp:149866",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "source_broader",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:7d651d75f92c6993ee10e8d9",
+      "review_item": 4,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18419-crisis-471-sentence-31",
+      "target_ref": "ucdp:395636",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "source_broader",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:8c41bf9edf7d1ff71cd7b058",
+      "review_item": 1,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18416-crisis-471-sentence-30",
+      "target_ref": "ucdp:395636",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "no_broader_narrower_asserted",
+        "equivalence_safety": "unsafe_as_equivalent"
+      },
+      "human_note": "Same early Donbas conflict episode, but the seizure/declaration and subsequent lethal shelling are distinct actions."
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:a62783b6edd29d5927dc850a",
+      "review_item": 10,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18420-crisis-471-sentence-31",
+      "target_ref": "ucdp:149876",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "source_broader",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:ae4e1b0def38e7efc1d8ab2b",
+      "review_item": 6,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18422-crisis-471-sentence-33",
+      "target_ref": "ucdp:149868",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "source_broader",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:b3509e0936ad847423806155",
+      "review_item": 15,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+      "target_ref": "ucdp:407729",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "no_broader_narrower_asserted",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:b3a5511fcdfda4d5a73b98df",
+      "review_item": 7,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18425-crisis-471-sentence-35",
+      "target_ref": "ucdp:152957",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "no_broader_narrower_asserted",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:b40e69e611af1ce14147b4d3",
+      "review_item": 8,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18424-crisis-471-sentence-34",
+      "target_ref": "ucdp:152957",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "source_broader",
+        "equivalence_safety": "unsafe_as_equivalent"
+      },
+      "human_note": "ICBe is the broader order for military operations; UCDP is a specific later assault that may be one implementation of that order."
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:d98e7155d2650115809ddac8",
+      "review_item": 16,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+      "target_ref": "ucdp:407740",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "no_broader_narrower_asserted",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    },
+    {
+      "kind": "relationship_assertion",
+      "id": "relationship:icbe-ucdp:f18d485828d51a6cf2da6d96",
+      "review_item": 14,
+      "source_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+      "target_ref": "ucdp:407721",
+      "dimensions": {
+        "identity": "not_same",
+        "relatedness": "related",
+        "scope": "no_broader_narrower_asserted",
+        "equivalence_safety": "unsafe_as_equivalent"
+      }
+    }
+  ],
+  "bundle_sha256": "sha256:b913061082d636ec1c6a3c5b60ec540852f93775b69f608b965952866c089285"
+}

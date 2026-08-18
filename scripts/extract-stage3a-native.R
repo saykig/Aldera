@@ -5,8 +5,8 @@
 # authoritative event table as RDS and does not include a CSV/TSV equivalent.
 
 args <- commandArgs(trailingOnly = TRUE)
-if (length(args) != 3) {
-  stop("usage: extract-stage3a-native.R <ICBe RDS> <UCDP CSV> <output directory>")
+if (!(length(args) %in% c(3, 5))) {
+  stop("usage: extract-stage3a-native.R <ICBe RDS> <UCDP CSV> <output directory> [from YYYY-MM-DD] [to YYYY-MM-DD]")
 }
 if (!requireNamespace("jsonlite", quietly = TRUE)) {
   stop("the R jsonlite package is required for this one-time extraction")
@@ -54,8 +54,11 @@ icbe$date_latest_year)
 starts <- as.Date(starts, origin = "1970-01-01")
 ends <- as.Date(ends, origin = "1970-01-01")
 
-selection_from <- as.Date("2014-04-07")
-selection_to <- as.Date("2014-04-24")
+selection_from <- as.Date(if (length(args) == 5) args[[4]] else "2014-04-07")
+selection_to <- as.Date(if (length(args) == 5) args[[5]] else "2014-04-24")
+if (is.na(selection_from) || is.na(selection_to) || selection_from > selection_to) {
+  stop("invalid extraction date window")
+}
 geography <- grepl(
   "donbass|donbas|donetsk|luhansk",
   paste(icbe$interact_location, icbe$sentence_span_text),
@@ -97,8 +100,8 @@ if (!all(required_ucdp %in% names(ucdp))) stop("unexpected UCDP GED schema")
 ucdp_keep <-
   ucdp$country == "Ukraine" &
   ucdp$adm_1 %in% c("Donetsk oblast", "Luhansk oblast") &
-  substr(ucdp$date_start, 1, 10) <= "2014-04-24" &
-  substr(ucdp$date_end, 1, 10) >= "2014-04-07"
+  substr(ucdp$date_start, 1, 10) <= format(selection_to, "%Y-%m-%d") &
+  substr(ucdp$date_end, 1, 10) >= format(selection_from, "%Y-%m-%d")
 ucdp_indices <- which(ucdp_keep)
 ucdp_output <- unname(lapply(ucdp_indices, function(index) list(
   source_row = index,
@@ -122,4 +125,10 @@ jsonlite::write_json(
   digits = NA
 )
 
-message(sprintf("selected %d ICBe rows and %d UCDP rows", length(icbe_indices), length(ucdp_indices)))
+message(sprintf(
+  "selected %d ICBe rows and %d UCDP rows for %s through %s",
+  length(icbe_indices),
+  length(ucdp_indices),
+  selection_from,
+  selection_to
+))

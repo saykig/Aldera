@@ -249,7 +249,7 @@ function runSearch(args: readonly string[], io: CliIO): number {
     }
     const datasets = (values.datasets ?? "icbe,ucdp")
       .split(",")
-      .map((dataset) => dataset.trim().toLocaleLowerCase())
+      .map((dataset) => dataset.trim().toLowerCase())
       .filter(Boolean);
     const allowed = new Set(["icbe", "ucdp"]);
     if (datasets.some((dataset) => !allowed.has(dataset))) {
@@ -300,7 +300,7 @@ function printCandidateSearch(response: CandidateSearchResponse, io: CliIO): voi
       `    dates: ICBe ${temporal.icbe.native_values.map(({ field, value }) => `${field}=${value}`).join("; ")} -> ${temporal.icbe.interpreted_from}..${temporal.icbe.interpreted_to} (${temporal.icbe.precision}); UCDP ${temporal.ucdp.native_values.map(({ field, value }) => `${field}=${value}`).join("; ")} -> ${temporal.ucdp.interpreted_from}..${temporal.ucdp.interpreted_to}`,
     );
     for (const [label, aliases] of [
-      ["places", pair.reason_evidence.places],
+      ["geographic context", pair.reason_evidence.geographic_context],
       ["localities", pair.reason_evidence.localities],
       ["actors", pair.reason_evidence.actors],
     ] as const) {
@@ -311,8 +311,8 @@ function printCandidateSearch(response: CandidateSearchResponse, io: CliIO): voi
       }
     }
   }
-  io.out(`No candidate found (${response.unmatched_refs.length}):`);
-  for (const ref of response.unmatched_refs) io.out(`  ${ref}`);
+  io.out(`Not prioritized (${response.not_prioritized_refs.length}):`);
+  for (const ref of response.not_prioritized_refs) io.out(`  ${ref}`);
   io.out(response.no_candidate_notice);
 }
 

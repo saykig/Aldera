@@ -53,7 +53,7 @@
     "total": 22
   },
   "canonical_parsed_bundle_sha256": {
-    "icbe": "sha256:97fff8ab08e876751c1273e054caa0e9b48cf9e7216323d593cc97360569a4fe",
+    "icbe": "sha256:ec35b0dfb6451cde75b993901929c0808f66a7d0921bdde8de3b31dbab31c1f8",
     "ucdp": "sha256:76259090549925a00bf3675ed226429ac27d92ff1c10c18ba90c4ec7a64a9ee8"
   }
 }

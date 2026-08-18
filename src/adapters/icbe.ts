@@ -25,6 +25,14 @@ function dateBound(
   };
 }
 
+function leastPrecise(
+  first: "day" | "month" | "year",
+  second: "day" | "month" | "year",
+): "day" | "month" | "year" {
+  const rank = { year: 0, month: 1, day: 2 } as const;
+  return rank[first] <= rank[second] ? first : second;
+}
+
 export const adaptIcbe: IcbeAdapter = (native) => {
   requiredInteger(native, "crisno");
   requiredInteger(native, "sentence_number_int_aligned");
@@ -45,7 +53,9 @@ export const adaptIcbe: IcbeAdapter = (native) => {
     ],
     dateFrom: earliest.value,
     dateTo: explicitLatest.value ?? inferredLatest.value!,
-    datePrecision: earliest.precision,
+    datePrecision: explicitLatest.precision
+      ? leastPrecise(earliest.precision, explicitLatest.precision)
+      : earliest.precision,
     actors: [
       ...optionalString(native, "do_actor_a"),
       ...optionalString(native, "do_actor_b"),

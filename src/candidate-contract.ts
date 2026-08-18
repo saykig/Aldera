@@ -6,7 +6,7 @@ import { sha256 } from "./canonical.js";
  */
 export const ICBE_UCDP_CANDIDATE_CONTRACT = {
   id: "aldera:icbe-ucdp-candidate-contract",
-  version: "0.2.0",
+  version: "0.3.0",
   comparison: { source_dataset: "icbe", target_dataset: "ucdp" },
   native_fields: {
     icbe: {
@@ -18,18 +18,18 @@ export const ICBE_UCDP_CANDIDATE_CONTRACT = {
         "date_latest_month",
         "date_latest_year",
       ],
-      places: ["interact_location", "sentence_span_text"],
+      geography: ["interact_location", "sentence_span_text"],
       actors: ["do_actor_a", "do_actor_b", "say_actor_a", "say_actor_b", "think_actor_a"],
     },
     ucdp: {
       dates: ["date_start", "date_end", "date_prec"],
-      places: ["adm_1", "adm_2", "where_coordinates", "where_description"],
+      geography: ["adm_1", "adm_2", "where_coordinates", "where_description"],
       actors: ["side_a", "side_b"],
     },
   },
   normalization: {
-    text: "Unicode NFKC, locale-lowercase; native values are retained in evidence",
-    place_aliases: [
+    text: "Unicode NFKC, ECMAScript locale-independent lowercase; native values are retained in evidence",
+    geographic_context_aliases: [
       {
         key: "donbas",
         rule: "case-insensitive substring",
@@ -73,9 +73,9 @@ export const ICBE_UCDP_CANDIDATE_CONTRACT = {
   },
   candidate_rules: {
     precise:
-      "A precise temporal signal, at least one place-alias match, and at least one actor-alias match",
+      "A precise temporal signal, at least one shared-geographic-context alias, and at least one actor-alias match",
     coarse:
-      "coarse_date_overlap, a Donbas place-alias match, a more specific locality-alias match, and at least two actor-alias matches",
+      "coarse_date_overlap, shared Donbas geographic context, a more specific locality-alias match, and at least two actor-alias matches",
     negative_result:
       "No candidate means only that this contract did not prioritize the pair; it is not aldera:unmapped",
   },

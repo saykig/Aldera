@@ -3,7 +3,7 @@ export type DatasetId = (typeof DATASETS)[number];
 
 export const CLI_FORMAT_VERSION = "0.1";
 export const SEARCH_CONTRACT_VERSION = "0.1";
-export const CANDIDATE_SEARCH_CONTRACT_VERSION = "0.3";
+export const CANDIDATE_SEARCH_CONTRACT_VERSION = "0.4";
 
 export const RELATIONS = [
   "aldera:close",
@@ -129,7 +129,7 @@ export type CandidateReason =
   | "date_overlap"
   | "date_within_one_day"
   | "coarse_date_overlap"
-  | "place_overlap"
+  | "geographic_context_overlap"
   | "locality_overlap"
   | "actor_overlap";
 
@@ -220,7 +220,7 @@ export interface CandidateReasonEvidence {
       native_date_prec: string;
     };
   };
-  places: AliasEvidence[];
+  geographic_context: AliasEvidence[];
   localities: AliasEvidence[];
   actors: AliasEvidence[];
 }
@@ -277,7 +277,7 @@ export interface CandidateSearchResponse {
   records: CandidateSourceRecord[];
   candidate_pairs: CandidatePair[];
   mappings: [];
-  unmatched_refs: string[];
+  not_prioritized_refs: string[];
   no_candidate_notice: string;
   receipt: CandidateReceiptBody & { receipt_sha256: string };
 }

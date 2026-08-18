@@ -3,6 +3,14 @@ import type {
   IcbeSourceLocatorIdentity,
 } from "./types.js";
 
+function locatorLabel(datasetVersion: string, extractedFilename: string): string {
+  return `${datasetVersion}-${extractedFilename}`
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export function makeIcbeSourceLocator(input: {
   datasetVersion: string;
   source: CandidateSourceBundle["source"];
@@ -15,9 +23,13 @@ export function makeIcbeSourceLocator(input: {
     throw new Error("ICBe source locator requires integer crisis and sentence coordinates");
   }
   const tableHash = input.source.extracted_artifact_sha256.replace(/^sha256:/, "");
+  const sourceLabel = locatorLabel(
+    input.datasetVersion,
+    input.source.extracted_artifact_filename,
+  );
   return {
     kind: "source_row_locator",
-    value: `ICBe-V1.1-sha256-${tableHash}-row-${input.rowNumber}-crisis-${crisno}-sentence-${sentence}`,
+    value: `${sourceLabel}-sha256-${tableHash}-row-${input.rowNumber}-crisis-${crisno}-sentence-${sentence}`,
     dataset_version: input.datasetVersion,
     raw_artifact: {
       filename: input.source.artifact_filename,

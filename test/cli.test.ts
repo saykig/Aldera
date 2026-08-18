@@ -167,7 +167,7 @@ describe("aldera CLI", () => {
       assert.equal(result.records.length, 22);
       assert.equal(result.candidate_pairs.length, 7);
       assert.deepEqual(result.mappings, []);
-      assert.equal(result.receipt.search_contract_version, "0.3");
+      assert.equal(result.receipt.search_contract_version, "0.4");
     },
   );
 });

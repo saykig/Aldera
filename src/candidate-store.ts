@@ -37,6 +37,10 @@ function dayNumber(value: string): number {
   return Math.floor(Date.parse(`${value}T00:00:00Z`) / 86_400_000);
 }
 
+function compareStrings(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 function nativeValues(record: CandidateSourceRecord, fields: readonly string[]): NativeFieldValue[] {
   return fields.flatMap((field) => {
     const value = record.native[field];
@@ -45,7 +49,7 @@ function nativeValues(record: CandidateSourceRecord, fields: readonly string[]):
 }
 
 function normalizedText(value: string): string {
-  return value.normalize("NFKC").toLocaleLowerCase();
+  return value.normalize("NFKC").toLowerCase();
 }
 
 function aliasMatches(value: string, key: string, terms: readonly string[]): boolean {
@@ -59,15 +63,15 @@ function aliasMatches(value: string, key: string, terms: readonly string[]): boo
 }
 
 function aliasEvidence(
-  kind: "places" | "localities" | "actors",
+  kind: "geographic_context" | "localities" | "actors",
   icbeRecord: CandidateSourceRecord,
   ucdpRecord: CandidateSourceRecord,
 ): AliasEvidence[] {
   const fieldContract = ICBE_UCDP_CANDIDATE_CONTRACT.native_fields;
-  const fieldsKind = kind === "localities" ? "places" : kind;
+  const fieldsKind = kind === "actors" ? "actors" : "geography";
   const aliases =
-    kind === "places"
-      ? ICBE_UCDP_CANDIDATE_CONTRACT.normalization.place_aliases
+    kind === "geographic_context"
+      ? ICBE_UCDP_CANDIDATE_CONTRACT.normalization.geographic_context_aliases
       : kind === "localities"
         ? ICBE_UCDP_CANDIDATE_CONTRACT.normalization.locality_aliases
         : ICBE_UCDP_CANDIDATE_CONTRACT.normalization.actor_aliases;
@@ -147,14 +151,14 @@ export function evaluateCandidatePair(
   const icbe = adaptIcbe(icbeRecord.native);
   const ucdp = adaptUcdp(ucdpRecord.native);
   const temporal = temporalEvidence(icbeRecord, ucdpRecord, icbe, ucdp);
-  const places = aliasEvidence("places", icbeRecord, ucdpRecord);
+  const geographicContext = aliasEvidence("geographic_context", icbeRecord, ucdpRecord);
   const localities = aliasEvidence("localities", icbeRecord, ucdpRecord);
   const actors = aliasEvidence("actors", icbeRecord, ucdpRecord);
   const isCoarse = temporal.reason === "coarse_date_overlap";
   const requiredActorMatches = isCoarse ? 2 : 1;
   const exclusionReasons: string[] = [];
   if (temporal.reason === null) exclusionReasons.push("no_temporal_signal");
-  if (places.length === 0) exclusionReasons.push("no_place_overlap");
+  if (geographicContext.length === 0) exclusionReasons.push("no_geographic_context_overlap");
   if (actors.length === 0) exclusionReasons.push("no_actor_overlap");
   if (isCoarse && localities.length === 0) {
     exclusionReasons.push("coarse_date_requires_locality_overlap");
@@ -166,7 +170,7 @@ export function evaluateCandidatePair(
   const reasons: CandidateReason[] = candidate
     ? [
         temporal.reason!,
-        "place_overlap",
+        "geographic_context_overlap",
         ...(isCoarse ? (["locality_overlap"] as const) : []),
         "actor_overlap",
       ]
@@ -179,7 +183,7 @@ export function evaluateCandidatePair(
     ...identity,
     candidate,
     candidate_id: candidateId,
-    reason_evidence: { temporal, places, localities, actors },
+    reason_evidence: { temporal, geographic_context: geographicContext, localities, actors },
     exclusion_reasons: exclusionReasons,
   };
 }
@@ -292,7 +296,7 @@ export class CandidateStore {
         if (query.actor && !valuesContain(view.actors, query.actor)) return false;
         return true;
       })
-      .sort((a, b) => a.ref.localeCompare(b.ref));
+      .sort((a, b) => compareStrings(a.ref, b.ref));
   }
 
   pairEvaluations(input: Partial<CandidateQuery>): CandidatePairEvaluation[] {
@@ -302,7 +306,7 @@ export class CandidateStore {
     return icbeRecords
       .flatMap((icbe) => ucdpRecords.map((ucdp) => evaluateCandidatePair(icbe, ucdp)))
       .sort((a, b) =>
-        `${a.icbe_ref}\u0000${a.ucdp_ref}`.localeCompare(`${b.icbe_ref}\u0000${b.ucdp_ref}`),
+        compareStrings(`${a.icbe_ref}\u0000${a.ucdp_ref}`, `${b.icbe_ref}\u0000${b.ucdp_ref}`),
       );
   }
 
@@ -316,7 +320,7 @@ export class CandidateStore {
     const participating = new Set(
       candidatePairs.flatMap((pair) => [pair.icbe_ref, pair.ucdp_ref]),
     );
-    const unmatchedRefs = records
+    const notPrioritizedRefs = records
       .filter((record) => !participating.has(record.ref))
       .map((record) => record.ref);
 
@@ -355,7 +359,7 @@ export class CandidateStore {
       records,
       candidate_pairs: candidatePairs,
       mappings: [],
-      unmatched_refs: unmatchedRefs,
+      not_prioritized_refs: notPrioritizedRefs,
       no_candidate_notice:
         "No candidate means only that this pinned candidate contract did not prioritize the record; it does not mean aldera:unmapped.",
       receipt: { ...receiptBody, receipt_sha256: sha256(receiptBody) },

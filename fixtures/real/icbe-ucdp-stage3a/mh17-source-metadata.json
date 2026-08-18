@@ -1,0 +1,37 @@
+{
+  "experiment": "Aldera Stage 3A positive control: ICBe ↔ UCDP GED MH17",
+  "official_source_verification_date": "2026-08-17",
+  "selection": {
+    "case": "ICBe crisis 471, Crimea-Donbas1 — MH17 positive-control window",
+    "place": "Donbas: ICBe crisis text/location fields; UCDP Donetsk and Luhansk oblasts",
+    "from": "2014-07-16",
+    "to": "2014-07-18"
+  },
+  "sources": {
+    "icbe": {
+      "version": "ICBe V1.1; Harvard Dataverse dataset version 1.0",
+      "artifact_url": "https://dataverse.harvard.edu/api/access/datafile/10040265",
+      "artifact_filename": "ICBe_Dataverse_replication.tar.gz",
+      "artifact_sha256": "sha256:882121e137250bded7e2405e8aa65c8a8cc21c83348a754862340b8048846fc6",
+      "extracted_artifact_filename": "ICBe_V1.1_events_agreed.Rds",
+      "extracted_artifact_sha256": "sha256:8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d"
+    },
+    "ucdp": {
+      "version": "UCDP GED Global 26.1",
+      "artifact_url": "https://ucdp.uu.se/downloads/ged/ged261-csv.zip",
+      "artifact_filename": "ged261-csv.zip",
+      "artifact_sha256": "sha256:8c941d84954e555ee2e54f40fa04d9203bf1e2f962203d0a9930966c4947c667",
+      "extracted_artifact_filename": "GEDEvent_v26_1.csv",
+      "extracted_artifact_sha256": "sha256:61c3bf0a86374778343ba30c28a18b1fe739e2c33a76055504427eded4f8be27"
+    }
+  },
+  "expected_selection_counts": {
+    "icbe": 2,
+    "ucdp": 13,
+    "total": 15
+  },
+  "canonical_parsed_bundle_sha256": {
+    "icbe": "sha256:dddcca68da0cf7b1f4b056b83d6a7781165bfe24795d317d123e61aece35a86b",
+    "ucdp": "sha256:c9b2701c0e546c530163b474c873fdc2d688cfe070c12a649df89b47e1647fda"
+  }
+}

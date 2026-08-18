@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { CandidateStore, evaluateCandidatePair } from "../src/candidate-store.js";
 import { ICBE_UCDP_CANDIDATE_CONTRACT_IDENTITY } from "../src/candidate-contract.js";
 import { sha256 } from "../src/canonical.js";
+import { adaptIcbe } from "../src/adapters/icbe.js";
 import { makeIcbeSourceLocator } from "../src/icbe-source-locator.js";
 import type { CandidateSourceBundle, CandidateSourceRecord } from "../src/types.js";
 
@@ -128,7 +129,7 @@ function hasNumericConfidence(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
   return Object.entries(value).some(
     ([key, child]) =>
-      (key.toLocaleLowerCase().includes("confidence") && typeof child === "number") ||
+      (key.toLowerCase().includes("confidence") && typeof child === "number") ||
       hasNumericConfidence(child),
   );
 }
@@ -162,18 +163,21 @@ describe("non-authoritative candidate discovery", () => {
     assert.equal(first.candidate_pairs.length, 1);
     assert.deepEqual(first.candidate_pairs[0]?.reasons, [
       "date_within_one_day",
-      "place_overlap",
+      "geographic_context_overlap",
       "actor_overlap",
     ]);
     assert.deepEqual(first.receipt.candidate_contract, ICBE_UCDP_CANDIDATE_CONTRACT_IDENTITY);
-    assert.equal(first.receipt.search_contract_version, "0.3");
-    assert.deepEqual(first.candidate_pairs[0]?.reason_evidence.places[0]?.icbe_native_values, [
+    assert.equal(first.receipt.search_contract_version, "0.4");
+    assert.deepEqual(
+      first.candidate_pairs[0]?.reason_evidence.geographic_context[0]?.icbe_native_values,
+      [
       { field: "interact_location", value: "donbass;government buildings;target" },
       {
         field: "sentence_span_text",
         value: "Pro-Russian militants in Donbass took control of government buildings.",
       },
-    ]);
+      ],
+    );
     assert.deepEqual(first.candidate_pairs[0]?.reason_evidence.actors[0]?.ucdp_native_values, [
       { field: "side_a", value: "Government of Ukraine" },
     ]);
@@ -225,7 +229,7 @@ describe("non-authoritative candidate discovery", () => {
     assert.equal(result.candidate_pairs.length, 1);
     assert.deepEqual(result.candidate_pairs[0]?.reasons.slice(0, 3), [
       "coarse_date_overlap",
-      "place_overlap",
+      "geographic_context_overlap",
       "locality_overlap",
     ]);
     assert.deepEqual(
@@ -256,7 +260,7 @@ describe("non-authoritative candidate discovery", () => {
     );
     assert.equal(evaluation?.reason_evidence.temporal.reason, "coarse_date_overlap");
     assert.equal(evaluation?.candidate, false);
-    assert.ok(evaluation?.exclusion_reasons.includes("no_place_overlap"));
+    assert.ok(evaluation?.exclusion_reasons.includes("no_geographic_context_overlap"));
     assert.ok(evaluation?.exclusion_reasons.includes("coarse_date_requires_two_actor_aliases"));
   });
 
@@ -267,6 +271,26 @@ describe("non-authoritative candidate discovery", () => {
     bundle.records[0].native_identity.extracted_table.row_number = 18417;
     writeFileSync(path, JSON.stringify(bundle));
     assert.throws(() => new CandidateStore(directory), /source locator does not bind/);
+  });
+
+  test("derives the ICBe locator label from source and version metadata", () => {
+    const store = new CandidateStore(fixtureDirectory());
+    const identity = store.bundles.icbe.records[0]?.native_identity;
+    assert.equal(identity?.kind, "source_row_locator");
+    assert.match(identity?.value ?? "", /^icbe-v1-1-test-shape-native-data-sha256-/);
+    assert.doesNotMatch(identity?.value ?? "", /ICBe-V1\.1/);
+  });
+
+  test("uses the least precise relevant ICBe date bound for interval precision", () => {
+    const store = new CandidateStore(fixtureDirectory());
+    const native = { ...store.bundles.icbe.records[0]!.native };
+    native.date_latest_year = "2014";
+    native.date_latest_month = "5";
+    native.date_latest_day = "";
+    const view = adaptIcbe(native);
+    assert.equal(view.dateFrom, "2014-04-07");
+    assert.equal(view.dateTo, "2014-05-31");
+    assert.equal(view.datePrecision, "month");
   });
 
   test("binds exact source bundles and changes the receipt when a native input changes", () => {
@@ -337,6 +361,9 @@ describe("non-authoritative candidate discovery", () => {
 });
 
 const localRealBundles = fileURLToPath(new URL("../data/local/stage3a/bundles", import.meta.url));
+const mainSourceMetadata = fileURLToPath(
+  new URL("../fixtures/real/icbe-ucdp-stage3a/source-metadata.json", import.meta.url),
+);
 test(
   "the pinned local real-data slice preserves 22 native records and evaluates all 120 pairs",
   { skip: !existsSync(join(localRealBundles, "icbe.json")) },
@@ -346,7 +373,7 @@ test(
     const evaluations = store.pairEvaluations({ candidate_pairs: true, datasets: ["icbe", "ucdp"] });
     assert.equal(result.records.length, 22);
     assert.equal(result.candidate_pairs.length, 7);
-    assert.equal(result.unmatched_refs.length, 12);
+    assert.equal(result.not_prioritized_refs.length, 12);
     assert.equal(evaluations.length, 120);
     assert.ok(
       evaluations.some(
@@ -358,13 +385,15 @@ test(
       false,
     );
     assert.equal(result.mappings.length, 0);
+    const declaredHashes = JSON.parse(readFileSync(mainSourceMetadata, "utf8"))
+      .canonical_parsed_bundle_sha256;
     assert.equal(
       result.receipt.inputs.icbe.source_bundle_sha256,
-      "sha256:97fff8ab08e876751c1273e054caa0e9b48cf9e7216323d593cc97360569a4fe",
+      declaredHashes.icbe,
     );
     assert.equal(
       result.receipt.inputs.ucdp.source_bundle_sha256,
-      "sha256:76259090549925a00bf3675ed226429ac27d92ff1c10c18ba90c4ec7a64a9ee8",
+      declaredHashes.ucdp,
     );
     const ucdp = store.bundles.ucdp.records.find((record) => record.ref === "ucdp:149866");
     assert.equal(ucdp?.native.id, "149866");
@@ -392,5 +421,75 @@ test(
         sentence_number_int_aligned: 30,
       });
     }
+  },
+);
+
+const localMh17Bundles = fileURLToPath(
+  new URL("../data/local/stage3a/mh17/bundles", import.meta.url),
+);
+const mh17SourceMetadata = fileURLToPath(
+  new URL("../fixtures/real/icbe-ucdp-stage3a/mh17-source-metadata.json", import.meta.url),
+);
+test(
+  "the unchanged candidate rules surface the MH17 positive-control pair",
+  { skip: !existsSync(join(localMh17Bundles, "icbe.json")) },
+  () => {
+    const store = new CandidateStore(localMh17Bundles);
+    const result = store.search({ candidate_pairs: true, datasets: ["icbe", "ucdp"] });
+    const evaluations = store.pairEvaluations({ candidate_pairs: true, datasets: ["icbe", "ucdp"] });
+    assert.equal(store.bundles.icbe.records.length, 2);
+    assert.equal(store.bundles.ucdp.records.length, 13);
+    assert.equal(evaluations.length, 26);
+    assert.equal(result.candidate_pairs.length, 6);
+    const declaredHashes = JSON.parse(readFileSync(mh17SourceMetadata, "utf8"))
+      .canonical_parsed_bundle_sha256;
+    assert.equal(result.receipt.inputs.icbe.source_bundle_sha256, declaredHashes.icbe);
+    assert.equal(result.receipt.inputs.ucdp.source_bundle_sha256, declaredHashes.ucdp);
+    const mh17 = result.candidate_pairs.find(
+      (pair) =>
+        pair.ucdp_ref === "ucdp:154679" &&
+        pair.icbe_ref.includes("-row-18436-crisis-471-sentence-44"),
+    );
+    assert.deepEqual(mh17?.reasons, [
+      "same_date",
+      "geographic_context_overlap",
+      "actor_overlap",
+    ]);
+    assert.deepEqual(result.mappings, []);
+  },
+);
+
+test(
+  "the generated human-review checkpoint leaves judgments blank",
+  {
+    skip:
+      !existsSync(join(localRealBundles, "icbe.json")) ||
+      !existsSync(join(localMh17Bundles, "icbe.json")),
+  },
+  () => {
+    const directory = mkdtempSync(join(tmpdir(), "aldera-human-review-test-"));
+    temporaryDirectories.push(directory);
+    const output = join(directory, "human-review.md");
+    const renderer = fileURLToPath(
+      new URL("../scripts/render-stage3a-human-review.ts", import.meta.url),
+    );
+    execFileSync(
+      process.execPath,
+      ["--import", "tsx", renderer, localRealBundles, localMh17Bundles, output],
+      { encoding: "utf8" },
+    );
+    const review = readFileSync(output, "utf8");
+    assert.match(review, /## A\. Current prioritized candidates/);
+    assert.match(review, /## B\. Challenge non-candidates/);
+    assert.match(review, /ICBe row 18424 ↔ UCDP 152957/);
+    assert.match(review, /## C\. Positive control/);
+    assert.match(review, /ICBe row 18436 ↔ UCDP 154679/);
+    assert.match(review, /do_interact_kind=/);
+    assert.match(review, /interact_escalate=/);
+    assert.match(review, /interact_geoscope=/);
+    assert.match(review, /do_duration=/);
+    assert.equal((review.match(/^HUMAN REVIEW:$/gm) ?? []).length, 16);
+    assert.doesNotMatch(review, /\[[xX]\]/);
+    assert.match(review, /substantive relationship judgments remain pending human review/);
   },
 );

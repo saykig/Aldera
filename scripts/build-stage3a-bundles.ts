@@ -18,6 +18,7 @@ interface SourceMetadata {
     icbe: CandidateSourceBundle["source"] & { version: string };
     ucdp: CandidateSourceBundle["source"] & { version: string };
   };
+  canonical_parsed_bundle_sha256: Record<"icbe" | "ucdp", string>;
 }
 
 const scriptArgs = process.argv.slice(2);
@@ -72,7 +73,7 @@ function ucdpRecord(row: ExtractedRecord): CandidateSourceRecord {
 function bundle(dataset: "icbe" | "ucdp"): CandidateSourceBundle {
   const records = readExtracted(dataset)
     .map(dataset === "icbe" ? icbeRecord : ucdpRecord)
-    .sort((a, b) => a.ref.localeCompare(b.ref));
+    .sort((a, b) => (a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0));
   return {
     schema_version: "0.1.0",
     dataset,
@@ -84,5 +85,17 @@ function bundle(dataset: "icbe" | "ucdp"): CandidateSourceBundle {
 }
 
 for (const dataset of ["icbe", "ucdp"] as const) {
-  writeFileSync(resolve(outputDirectory, `${dataset}.json`), `${JSON.stringify(bundle(dataset), null, 2)}\n`);
+  const generated = bundle(dataset);
+  const actualHash = sha256(generated);
+  const expectedHash = metadata.canonical_parsed_bundle_sha256[dataset];
+  if (actualHash !== expectedHash) {
+    throw new Error(
+      `${dataset} generated bundle hash ${actualHash} does not match declared ${expectedHash}`,
+    );
+  }
+  writeFileSync(
+    resolve(outputDirectory, `${dataset}.json`),
+    `${JSON.stringify(generated, null, 2)}\n`,
+  );
+  process.stdout.write(`${dataset} canonical parsed bundle: ${actualHash}\n`);
 }

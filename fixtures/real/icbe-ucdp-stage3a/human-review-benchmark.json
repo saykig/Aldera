@@ -1,0 +1,414 @@
+{
+  "format_version": "0.1",
+  "kind": "human_review_benchmark",
+  "mapping_authority": false,
+  "not_a_mapping_bundle": true,
+  "review_date": "2026-08-18",
+  "candidate_contract": {
+    "id": "aldera:icbe-ucdp-candidate-contract",
+    "version": "0.3.0",
+    "sha256": "sha256:38a00b5418178a8a1fe0eb928c76de324bdc9a32e53b0db4c11780a390afb85e"
+  },
+  "search_receipts": {
+    "main": "sha256:e58adf24b09f6d13c27f806017636f5958d6198355bedbce417927f86a645374",
+    "mh17_control": "sha256:18bc345fffefe18913da411e6c4b2b67b79cf4e6e164c0dcfc900c74adafe064"
+  },
+  "sample_notice": "Deliberately selected candidate, challenge, and control cases; not a random or balanced accuracy sample.",
+  "cases": [
+    {
+      "review_item": 1,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18416-crisis-471-sentence-30",
+        "ucdp_ref": "ucdp:395636"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:a4061694b0b934c2cfd8",
+        "reasons": [
+          "date_within_one_day",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "no",
+        "broader_narrower_direction": null,
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": "Same early Donbas conflict episode, but the seizure/declaration and subsequent lethal shelling are distinct actions."
+      }
+    },
+    {
+      "review_item": 2,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18417-crisis-471-sentence-30",
+        "ucdp_ref": "ucdp:395636"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:5e1e27d912515a47b7d3",
+        "reasons": [
+          "date_within_one_day",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "yes",
+        "broader_narrower_direction": "icbe_broader_ucdp_narrower",
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    },
+    {
+      "review_item": 3,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18418-crisis-471-sentence-31",
+        "ucdp_ref": "ucdp:395636"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:e3aef5f89e51c8cc1695",
+        "reasons": [
+          "date_within_one_day",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "yes",
+        "broader_narrower_direction": "icbe_broader_ucdp_narrower",
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    },
+    {
+      "review_item": 4,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18419-crisis-471-sentence-31",
+        "ucdp_ref": "ucdp:395636"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:7c3fc9f5b5120104422d",
+        "reasons": [
+          "date_within_one_day",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "yes",
+        "broader_narrower_direction": "icbe_broader_ucdp_narrower",
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    },
+    {
+      "review_item": 5,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18422-crisis-471-sentence-33",
+        "ucdp_ref": "ucdp:149866"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:35b9e5d7584d49392c91",
+        "reasons": [
+          "date_within_one_day",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "yes",
+        "broader_narrower_direction": "icbe_broader_ucdp_narrower",
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    },
+    {
+      "review_item": 6,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18422-crisis-471-sentence-33",
+        "ucdp_ref": "ucdp:149868"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:6ea4dc05c73410fb2ad5",
+        "reasons": [
+          "date_within_one_day",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "yes",
+        "broader_narrower_direction": "icbe_broader_ucdp_narrower",
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    },
+    {
+      "review_item": 7,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18425-crisis-471-sentence-35",
+        "ucdp_ref": "ucdp:152957"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:b5a712ee885185586fca",
+        "reasons": [
+          "date_within_one_day",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "no",
+        "broader_narrower_direction": null,
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    },
+    {
+      "review_item": 8,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18424-crisis-471-sentence-34",
+        "ucdp_ref": "ucdp:152957"
+      },
+      "aldera": {
+        "prioritized": false,
+        "candidate_id": null,
+        "reasons": [],
+        "exclusion_reasons": [
+          "no_temporal_signal"
+        ]
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "yes",
+        "broader_narrower_direction": "icbe_broader_ucdp_narrower",
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": "ICBe is the broader order for military operations; UCDP is a specific later assault that may be one implementation of that order."
+      }
+    },
+    {
+      "review_item": 9,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18422-crisis-471-sentence-33",
+        "ucdp_ref": "ucdp:155086"
+      },
+      "aldera": {
+        "prioritized": false,
+        "candidate_id": null,
+        "reasons": [],
+        "exclusion_reasons": [
+          "coarse_date_requires_locality_overlap"
+        ]
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "yes",
+        "broader_narrower_direction": "ucdp_broader_icbe_narrower",
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": "The ICBe action falls temporally and substantively inside the much broader UCDP conflict interval, but UCDP aggregates many lethal events across months rather than representing that single announcement/operation."
+      }
+    },
+    {
+      "review_item": 10,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18420-crisis-471-sentence-31",
+        "ucdp_ref": "ucdp:149876"
+      },
+      "aldera": {
+        "prioritized": false,
+        "candidate_id": null,
+        "reasons": [],
+        "exclusion_reasons": [
+          "coarse_date_requires_locality_overlap",
+          "coarse_date_requires_two_actor_aliases"
+        ]
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "yes",
+        "broader_narrower_direction": "icbe_broader_ucdp_narrower",
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    },
+    {
+      "review_item": 11,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+        "ucdp_ref": "ucdp:154679"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:9a3a2b92b374ff1ec302",
+        "reasons": [
+          "same_date",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "yes",
+        "meaningfully_related": "yes",
+        "broader_narrower": "no",
+        "broader_narrower_direction": null,
+        "safe_or_unsafe_equivalence": "safe_as_equivalent",
+        "note": "Both represent the MH17 downing, while preserving different native details."
+      }
+    },
+    {
+      "review_item": 12,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+        "ucdp_ref": "ucdp:407710"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:043e40122f2bd8ea666a",
+        "reasons": [
+          "date_within_one_day",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "no",
+        "broader_narrower_direction": null,
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    },
+    {
+      "review_item": 13,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+        "ucdp_ref": "ucdp:407714"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:a6dbb49044281cc332cd",
+        "reasons": [
+          "date_within_one_day",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "no",
+        "broader_narrower_direction": null,
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    },
+    {
+      "review_item": 14,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+        "ucdp_ref": "ucdp:407721"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:9ae927ea173cb65d56a8",
+        "reasons": [
+          "same_date",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "no",
+        "broader_narrower_direction": null,
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    },
+    {
+      "review_item": 15,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+        "ucdp_ref": "ucdp:407729"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:cc4c13b1d02742ac682c",
+        "reasons": [
+          "same_date",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "no",
+        "broader_narrower_direction": null,
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    },
+    {
+      "review_item": 16,
+      "pair": {
+        "icbe_ref": "icbe:icbe-v1-1-harvard-dataverse-dataset-version-1-0-icbe-v1-1-events-agreed-rds-sha256-8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d-row-18436-crisis-471-sentence-44",
+        "ucdp_ref": "ucdp:407740"
+      },
+      "aldera": {
+        "prioritized": true,
+        "candidate_id": "candidate:7896b569330ae137063b",
+        "reasons": [
+          "date_within_one_day",
+          "geographic_context_overlap",
+          "actor_overlap"
+        ],
+        "exclusion_reasons": []
+      },
+      "human_judgment": {
+        "same_underlying_occurrence": "no",
+        "meaningfully_related": "yes",
+        "broader_narrower": "no",
+        "broader_narrower_direction": null,
+        "safe_or_unsafe_equivalence": "unsafe_as_equivalent",
+        "note": null
+      }
+    }
+  ]
+}

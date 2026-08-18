@@ -77,7 +77,7 @@ The retrieval target matters:
 
 The main Stage 3A lesson is that the candidate contract appears useful for finding a **relationship neighborhood** from time, geographic-context, and actor signals, but those signals are insufficient to determine the **type** of relationship. Candidate discovery must remain separate from mapping authority. The candidate rules were not changed from these 16 examples, avoiding overfitting this small proving ground.
 
-The local `data/local/stage3a/human-review-benchmark.json` is explicitly a human-review benchmark, not a mapping bundle or mapping authority. It pins full pair refs, Aldera prioritization output, the human judgments, review date, both search receipts, and candidate-contract identity/hash. It begins an iterative evaluation loop:
+The tracked, sanitized `fixtures/real/icbe-ucdp-stage3a/human-review-benchmark.json` is explicitly a human-review benchmark, not a mapping bundle or mapping authority. It contains opaque pair refs, Aldera prioritization output, human judgments, review date, both search receipts, and candidate-contract identity/hash, but no restricted native descriptions. It begins an iterative evaluation loop:
 
 ```text
 human-reviewed examples
@@ -157,7 +157,7 @@ pnpm stage3a:human-review -- \
   data/local/stage3a/bundles \
   data/local/stage3a/mh17/bundles \
   data/local/stage3a/human-review.md \
-  data/local/stage3a/human-review-benchmark.json
+  fixtures/real/icbe-ucdp-stage3a/human-review-benchmark.json
 ```
 
 Omit the benchmark argument to generate a blank checkpoint for a new review. Supplying the benchmark validates its contract identity, receipts, pair refs, prioritization output, and scope-direction consistency before rendering the completed judgments. The detailed review and compact human checkpoint keep ICBe and UCDP fields in visibly separate sections and preserve populated native action/category values. They are local because they reproduce third-party native descriptions.

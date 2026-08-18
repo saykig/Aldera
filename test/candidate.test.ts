@@ -494,14 +494,13 @@ test(
   },
 );
 
-const localHumanBenchmark = fileURLToPath(
-  new URL("../data/local/stage3a/human-review-benchmark.json", import.meta.url),
+const humanBenchmark = fileURLToPath(
+  new URL("../fixtures/real/icbe-ucdp-stage3a/human-review-benchmark.json", import.meta.url),
 );
 test(
-  "the completed human benchmark is pinned, non-authoritative, and renders exactly one choice per question",
-  { skip: !existsSync(localHumanBenchmark) },
+  "the sanitized human benchmark is tracked, pinned, and non-authoritative",
   () => {
-    const benchmark = JSON.parse(readFileSync(localHumanBenchmark, "utf8"));
+    const benchmark = JSON.parse(readFileSync(humanBenchmark, "utf8"));
     assert.equal(benchmark.kind, "human_review_benchmark");
     assert.equal(benchmark.mapping_authority, false);
     assert.equal(benchmark.not_a_mapping_bundle, true);
@@ -532,6 +531,23 @@ test(
       15,
     );
     assert.equal("mappings" in benchmark, false);
+    for (const item of benchmark.cases) {
+      assert.deepEqual(Object.keys(item).sort(), ["aldera", "human_judgment", "pair", "review_item"]);
+      assert.equal("native" in item, false);
+      assert.equal("reason_evidence" in item.aldera, false);
+      assert.equal("description" in item, false);
+    }
+  },
+);
+
+test(
+  "the tracked human benchmark renders exactly one choice per question",
+  {
+    skip:
+      !existsSync(join(localRealBundles, "icbe.json")) ||
+      !existsSync(join(localMh17Bundles, "icbe.json")),
+  },
+  () => {
     const directory = mkdtempSync(join(tmpdir(), "aldera-completed-review-test-"));
     temporaryDirectories.push(directory);
     const output = join(directory, "human-review.md");
@@ -547,7 +563,7 @@ test(
         localRealBundles,
         localMh17Bundles,
         output,
-        localHumanBenchmark,
+        humanBenchmark,
       ],
       { encoding: "utf8" },
     );

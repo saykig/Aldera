@@ -1,76 +1,73 @@
-# Stage 3B relationship-model design note
+# Stage 3B relationship-assertion design
 
-Status: design question only. No Stage 3B schema, relation, mapping assertion, or mapping-authority behavior is implemented by this note.
+Status: approved v0.1 design. This note defines the bounded Stage 3B implementation; it does not itself create an assertion.
 
-## Problem exposed by Stage 3A
+## Why the old relation enum is not one variable
 
-The current `MappingRelation` enum is deliberately small:
+The original values answer different questions:
 
-- `aldera:close`
-- `aldera:related`
-- `aldera:incompatible`
-- `aldera:unmapped`
+- `aldera:close` approximates occurrence identity;
+- `aldera:related` expresses relatedness;
+- `aldera:incompatible` warns against equivalence; and
+- `aldera:unmapped` says that no target counterpart was asserted within a pinned comparison bundle.
 
-That single-label model cannot faithfully preserve several judgments recorded at once during Stage 3A. A reviewed pair can simultaneously be:
+They are not mutually exclusive relationship types. Stage 3A showed that a pair can be not the same occurrence, meaningfully related, broader or narrower, and unsafe to treat as an equivalent unit at the same time.
 
-- not the same occurrence;
-- meaningfully related;
-- broader or narrower in scope; and
-- unsafe to treat as equivalent.
+Stage 3B therefore moves `unmapped` out of the relationship model. A future no-counterpart or coverage assertion has no target record and is structurally separate from a relationship between two records. The legacy enum remains only in the synthetic UCDP/ACLED proving fixture while its compatibility path is evaluated.
 
-Selecting only `related` loses scope and comparability. Selecting only `incompatible` loses the positive relatedness judgment and may be misread as a factual disagreement. Selecting `close` would overstate identity. The problem is not a missing fifth label; it is that the observed properties are not mutually exclusive.
+## Relationship assertion v0.1
 
-## Smallest structure that preserves the judgments
-
-Stage 3B should evaluate a multidimensional relationship assessment with four explicit axes:
+The smallest model supported by the completed review has four independent dimensions:
 
 ```yaml
-identity:
-  same | not_same | uncertain
-
-relatedness:
-  related | not_related | uncertain
-
-scope:
-  equivalent | source_broader | target_broader | overlapping | none | uncertain
-
-comparability:
-  safe_as_equivalent | unsafe_as_equivalent | conditional | uncertain
+identity: same | not_same | uncertain
+relatedness: related | not_related | uncertain
+scope: source_broader | target_broader | neither | uncertain
+equivalence_safety: safe_as_equivalent | unsafe_as_equivalent | uncertain
 ```
 
-Here, `source` and `target` refer to the declared direction of the dataset comparison or future assertion, not record chronology.
+`source` and `target` refer to the declared direction of the assertion. Stage 3B does not add `equivalent`, `overlapping`, or `conditional`: the Stage 3A questions did not establish those categories. Later source pairs can challenge and version the model.
 
-Four axes appear to be the smallest representation that preserves the completed review without forcing mutually exclusive labels:
+The dimensions do not replace the existing explanatory payload. Every assertion also preserves:
 
-- identity records whether the native records represent the same occurrence;
-- relatedness records connection even when identity differs;
-- scope preserves broader/narrower direction or partial overlap;
-- comparability records whether equivalence-based downstream use is safe.
+- a human rationale;
+- `meaning_preserved`;
+- `meaning_lost`;
+- explicit uncertainty; and
+- human provenance, including review date and the benchmark evidence used.
 
-The axes should remain independent. For example, `not_same` does not imply `not_related`, and `related` does not imply `safe_as_equivalent`. `uncertain` is explicit on every dimension so absence of evidence is not converted into a negative assertion.
+In particular, `unsafe_as_equivalent` does not mean records cannot be compared. It means downstream consumers must not treat them as interchangeable units.
 
-## Recommendation for Stage 3B planning
+## Stable opaque source references
 
-Use the four-axis structure as the leading design candidate, but do not implement it until additional human-reviewed examples include at least some `not_related`, uncertain, overlapping-scope, and conditionally comparable cases. Evaluate whether the existing four `MappingRelation` values should become derived presentation summaries, remain only for backward-compatible synthetic fixtures, or be retired from new assertions. Do not decide that migration from the Stage 3A sample alone.
+Relationship endpoints are stable Aldera source references, not a closed dataset enum plus conventional `native_id`. An endpoint may resolve through a native event ID, source-row locator, composite key, or another pinned native identity mechanism. Aldera requires a reproducible pointer back to the native object; it does not require research systems to identify objects in the same way.
 
-Candidate signals must not populate these dimensions automatically. They may select records for review, while relationship dimensions require separate asserted provenance and mapping authority. The local Stage 3A benchmark is evaluation evidence, not an assertion source.
+This permits ICBe row locators and UCDP native IDs to participate in the same assertion layer without pretending ICBe has a native event ID or merely adding `icbe` to the old `DatasetId` union.
 
-## Versioned evaluation loop
+## Candidate discovery remains subordinate
 
-Any future rule or schema change should follow an explicit loop:
+Candidate signals may prioritize pairs for review but must never populate relationship dimensions. Stage 3B encodes all 16 completed human reviews, including the three challenge pairs the candidate contract did not prioritize. This proves that an authoritative human-reviewed assertion can exist independently of candidate discovery.
+
+The bounded proving loop is:
 
 ```text
-human-reviewed examples
+native research objects
         ↓
-pinned benchmark
+reproducible opaque references
         ↓
-new candidate-contract or relationship-schema version
+non-authoritative candidate discovery
         ↓
-rerun benchmark
+human judgment
         ↓
-compare improved and regressed cases by dimension
+multidimensional relationship assertion
         ↓
-publish the new version and deterministic hash
+provenance and semantic preservation/loss
+        ↓
+reproducible map/search result
 ```
 
-Aldera must not self-learn or silently mutate rules from review results. Every change remains inspectable, reproducible, and attributable to a versioned contract or schema decision.
+The tracked Stage 3A benchmark remains evaluation evidence, not mapping authority. Stage 3B assertions separately record the human authority and source benchmark. Aldera never silently self-learns or mutates rules.
+
+## Bounded implementation decision
+
+Proceed with v0.1 now. Do not wait for a perfect benchmark, and do not change candidate rules from these 16 examples. The implementation ends the initial ICBe/UCDP proving ground once all 16 assertions validate and are reproducibly consumable through `inspect`, `map`, and `search`. The next empirical test should use a substantially different source pair rather than extending this proving ground into a Stage 3C.

@@ -2,7 +2,7 @@
 
 Aldera is an experimental interoperability layer for research data. Its first proving ground asks whether UCDP and ACLED conflict-event representations can be connected while both datasets remain native and authoritative.
 
-Aldera does **not** define a universal event ontology and does not convert records into an “Aldera format.” It owns only dataset/version descriptors, two small search adapters, mapping assertions, provenance, validation, and deterministic evidence receipts.
+Aldera asks the following: Where did this come from? What does it measure? What can it legitimately be compared with? Where are the representations commensurable, partially commensurable, or incompatible? What information is lost in moving between them?
 
 ## Try it
 

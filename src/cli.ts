@@ -1,15 +1,13 @@
-import { parseArgs } from "node:util";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { AlderaStore, normalizeDatasets, normalizeRelation } from "./store.js";
+import { parseArgs } from "node:util";
 import { CandidateStore } from "./candidate-store.js";
-import { validateStore } from "./validation.js";
+import { ICBE_UCDP_CANDIDATE_CONTRACT_IDENTITY } from "./candidate-contract.js";
 import { CLI_FORMAT_VERSION } from "./types.js";
 import type {
+  CandidateDatasetId,
   CandidateQuery,
   CandidateSearchResponse,
-  MappingAssertion,
-  SearchQuery,
-  SearchResponse,
 } from "./types.js";
 
 export interface CliIO {
@@ -23,18 +21,18 @@ export const processIO: CliIO = {
 };
 
 const USAGE = [
-  "aldera — research-data interoperability playground",
+  "aldera — ICBe ↔ UCDP real-data interoperability proving ground",
   "",
   "Usage:",
-  "  aldera inspect [<dataset|source-ref|mapping-id>] [--json] [--data-dir <path>]",
+  "  aldera inspect [<icbe|ucdp|source-ref>] [--json] [--data-dir <path>]",
   "  aldera validate [--json] [--data-dir <path>]",
   "  aldera map <source-ref> [target-ref] [--json] [--data-dir <path>]",
-  "  aldera search [--place <text>] [--from <date>] [--to <date>]",
-  "                [--datasets ucdp,acled] [--actor <text>] [--relation <relation>]",
-  "                [--candidate-pairs --datasets icbe,ucdp]",
-  "                [--source-id <id>] [--json] [--data-dir <path>]",
+  "  aldera search [--candidate-pairs] [--place <text>] [--from <date>] [--to <date>]",
+  "                [--datasets icbe,ucdp] [--actor <text>]",
+  "                [--json] [--data-dir <path>]",
   "",
-  "Relations: close, related, incompatible, unmapped",
+  "Current searches expose non-authoritative candidate pairs only.",
+  "Native source bundles must be reconstructed locally; see docs/stage3a.md.",
 ].join("\n");
 
 function commonOptions() {
@@ -59,6 +57,49 @@ function normalizedDate(value: string | undefined, flag: string): string | undef
     throw new Error(`--${flag} must use YYYY-MM-DD`);
   }
   return normalized;
+}
+
+function currentDataDirectory(value: string | undefined): string {
+  const directory = resolve(value ?? resolve(process.cwd(), "data/local/stage3a/bundles"));
+  if (!existsSync(resolve(directory, "icbe.json")) || !existsSync(resolve(directory, "ucdp.json"))) {
+    throw new Error(
+      `ICBe/UCDP source bundles are not available at ${directory}; reconstruct the pinned local bundles described in docs/stage3a.md or pass --data-dir`,
+    );
+  }
+  return directory;
+}
+
+function currentStore(dataDirectory: string | undefined): CandidateStore {
+  return new CandidateStore(currentDataDirectory(dataDirectory));
+}
+
+function normalizeCurrentDatasets(value: string | undefined): CandidateDatasetId[] {
+  const datasets = (value ?? "icbe,ucdp")
+    .split(",")
+    .map((dataset) => dataset.trim().toLowerCase())
+    .filter(Boolean);
+  const allowed = new Set<CandidateDatasetId>(["icbe", "ucdp"]);
+  for (const dataset of datasets) {
+    if (!allowed.has(dataset as CandidateDatasetId)) throw new Error(`Unknown dataset: ${dataset}`);
+  }
+  const normalized = [...new Set(datasets as CandidateDatasetId[])].sort();
+  if (normalized.join(",") !== "icbe,ucdp") {
+    throw new Error("the current proving ground requires exactly --datasets icbe,ucdp");
+  }
+  return normalized;
+}
+
+function datasetSummary(store: CandidateStore, dataset: CandidateDatasetId) {
+  const bundle = store.bundles[dataset];
+  return {
+    kind: "native_source_dataset",
+    id: dataset,
+    version: bundle.dataset_version,
+    identity_mechanism: dataset === "icbe" ? "source_row_locator" : "native_id",
+    source: bundle.source,
+    selection: bundle.selection,
+    record_count: bundle.records.length,
+  };
 }
 
 export async function runCli(argv: readonly string[], io: CliIO = processIO): Promise<number> {
@@ -92,29 +133,30 @@ function runInspect(args: readonly string[], io: CliIO): number {
     allowPositionals: true,
   });
   if (positionals.length > 1) throw new Error("inspect accepts at most one target");
-  const store = new AlderaStore(values["data-dir"]);
+  const store = currentStore(values["data-dir"]);
   const target = positionals[0];
   let result: unknown;
   if (!target) {
     result = {
       product: "Aldera",
-      datasets: store.descriptors(),
-      mapping_version: store.mappingBundle.mapping_version,
-      record_count: store.records().length,
-      mapping_count: store.mappingBundle.mappings.length,
+      empirical_direction: "icbe-ucdp",
+      current_mode: "non_authoritative_candidate_discovery",
+      datasets: (["icbe", "ucdp"] as const).map((dataset) => datasetSummary(store, dataset)),
+      candidate_contract: ICBE_UCDP_CANDIDATE_CONTRACT_IDENTITY,
+      native_record_count: store.records().length,
+      relationship_assertion_count: 0,
     };
+  } else if (target === "icbe" || target === "ucdp") {
+    result = datasetSummary(store, target);
   } else {
     const record = store.record(target);
-    const mapping = store.mapping(target);
-    const dataset = store.descriptors().find((item) => item.id === target);
-    result = record
-      ? { kind: "native_source_record", ...record, mappings: store.mappingsBetween(record.ref) }
-      : mapping
-        ? { kind: "mapping_assertion", ...mapping }
-        : dataset
-          ? { kind: "dataset", ...dataset }
-          : undefined;
-    if (!result) throw new Error(`No dataset, source record, or mapping named ${target}`);
+    if (!record) throw new Error(`No current dataset or source record named ${target}`);
+    result = {
+      kind: "native_source_record",
+      ...record,
+      mapping_authority: false,
+      relationship_assertions: [],
+    };
   }
   if (values.json) outputJson({ format_version: CLI_FORMAT_VERSION, result }, io);
   else printInspect(result, io);
@@ -124,27 +166,21 @@ function runInspect(args: readonly string[], io: CliIO): number {
 function printInspect(result: unknown, io: CliIO): void {
   const item = result as Record<string, unknown>;
   if (item.product === "Aldera") {
-    io.out(`Aldera  mapping ${item.mapping_version}`);
-    io.out(`Native records: ${item.record_count}  Mapping assertions: ${item.mapping_count}`);
-    for (const dataset of item.datasets as Array<{ id: string; version: string; title: string }>) {
-      io.out(`  ${dataset.id.padEnd(6)} ${dataset.version}  ${dataset.title}`);
-    }
+    io.out("Aldera — ICBe ↔ UCDP");
+    io.out(`Native records: ${item.native_record_count}`);
+    io.out("Relationship assertions: 0 (Stage 3B is not implemented)");
+    return;
+  }
+  if (item.kind === "native_source_dataset") {
+    io.out(`${item.id}@${item.version}  [${item.identity_mechanism}]`);
+    io.out(`Native records: ${item.record_count}`);
     return;
   }
   if (item.kind === "native_source_record") {
     io.out(`${item.ref}  [native ${item.dataset}@${item.dataset_version}]`);
-    io.out(`Native ID: ${item.native_id}`);
+    io.out(`Identity: ${JSON.stringify(item.native_identity)}`);
     io.out(`Hash: ${item.native_sha256}`);
     io.out(JSON.stringify(item.native, null, 2));
-    const mappings = item.mappings as MappingAssertion[];
-    if (mappings.length) {
-      io.out("Mappings:");
-      for (const mapping of mappings) io.out(`  ${mapping.id}  ${mapping.relation}`);
-    }
-    return;
-  }
-  if (item.kind === "mapping_assertion") {
-    printMapping(item as unknown as MappingAssertion, io);
     return;
   }
   io.out(JSON.stringify(result, null, 2));
@@ -152,34 +188,29 @@ function printInspect(result: unknown, io: CliIO): void {
 
 function runValidate(args: readonly string[], io: CliIO): number {
   const { values } = parseArgs({ args: [...args], options: commonOptions(), allowPositionals: false });
-  const store = new AlderaStore(values["data-dir"]);
-  const diagnostics = validateStore(store);
-  const errors = diagnostics.filter((item) => item.severity === "error");
+  const store = currentStore(values["data-dir"]);
   const result = {
     format_version: CLI_FORMAT_VERSION,
-    valid: errors.length === 0,
-    dataset_versions: Object.fromEntries(store.descriptors().map((item) => [item.id, item.version])),
-    mapping_version: store.mappingBundle.mapping_version,
-    checked: { records: store.records().length, mappings: store.mappingBundle.mappings.length },
-    diagnostics,
+    valid: true,
+    empirical_direction: "icbe-ucdp",
+    candidate_contract: ICBE_UCDP_CANDIDATE_CONTRACT_IDENTITY,
+    dataset_versions: {
+      icbe: store.bundles.icbe.dataset_version,
+      ucdp: store.bundles.ucdp.dataset_version,
+    },
+    checked: {
+      native_records: store.records().length,
+      relationship_assertions: 0,
+    },
+    notice:
+      "Candidate source integrity is valid. No relationship-assertion schema or bundle exists before Stage 3B.",
   };
   if (values.json) outputJson(result, io);
-  else if (result.valid) {
-    io.out(
-      `OK: ${result.checked.records} native records and ${result.checked.mappings} mapping assertions validated.`,
-    );
-    io.out(
-      `Versions: UCDP ${result.dataset_versions.ucdp}; ACLED ${result.dataset_versions.acled}; mappings ${result.mapping_version}`,
-    );
-  } else {
-    io.err(`INVALID: ${errors.length} error(s)`);
-    for (const diagnostic of diagnostics) {
-      io.err(
-        `  [${diagnostic.severity}] ${diagnostic.code} ${diagnostic.path}: ${diagnostic.message}`,
-      );
-    }
+  else {
+    io.out(`OK: ${result.checked.native_records} native ICBe/UCDP records validated.`);
+    io.out(result.notice);
   }
-  return result.valid ? 0 : 1;
+  return 0;
 }
 
 function runMap(args: readonly string[], io: CliIO): number {
@@ -191,33 +222,24 @@ function runMap(args: readonly string[], io: CliIO): number {
   if (positionals.length < 1 || positionals.length > 2) {
     throw new Error("map requires a source reference and optionally a target reference");
   }
-  const store = new AlderaStore(values["data-dir"]);
+  const store = currentStore(values["data-dir"]);
   const [source, target] = positionals as [string, string?];
   if (!store.record(source)) throw new Error(`Unknown source record ${source}`);
   if (target !== undefined && !store.record(target)) throw new Error(`Unknown target record ${target}`);
-
-  const mappings = store.mappingsBetween(source, target);
-  if (!mappings.length) {
-    io.out(`No asserted mapping for ${source}${target ? ` and ${target}` : ""}.`);
-    return 0;
+  const result = {
+    format_version: CLI_FORMAT_VERSION,
+    mode: "relationship_assertions",
+    source_ref: source,
+    ...(target ? { target_ref: target } : {}),
+    relationship_assertions: [],
+    notice:
+      "No current relationship assertion exists. Candidate pairs are non-authoritative, and Stage 3B is not implemented.",
+  };
+  if (values.json) outputJson(result, io);
+  else {
+    io.out(result.notice);
   }
-  if (values.json) outputJson({ format_version: CLI_FORMAT_VERSION, mappings }, io);
-  else for (const mapping of mappings) printMapping(mapping, io);
   return 0;
-}
-
-function printMapping(mapping: MappingAssertion, io: CliIO): void {
-  io.out(mapping.id);
-  io.out(`${mapping.source}  --${mapping.relation}-->  ${mapping.target ?? "∅"}`);
-  io.out(`Rationale: ${mapping.rationale}`);
-  if (mapping.uncertainty) io.out(`Uncertainty: ${mapping.uncertainty}`);
-  io.out("Meaning preserved:");
-  for (const item of mapping.meaning_preserved) io.out(`  + ${item}`);
-  io.out("Meaning lost / not translated:");
-  for (const item of mapping.meaning_lost) io.out(`  - ${item}`);
-  io.out(
-    `Provenance: ${mapping.provenance.asserted_by}; ${mapping.provenance.method}; evidence ${mapping.provenance.evidence.join(", ")}`,
-  );
 }
 
 function runSearch(args: readonly string[], io: CliIO): number {
@@ -230,57 +252,26 @@ function runSearch(args: readonly string[], io: CliIO): number {
       to: { type: "string" },
       datasets: { type: "string" },
       actor: { type: "string" },
-      relation: { type: "string" },
-      "source-id": { type: "string" },
       "candidate-pairs": { type: "boolean", default: false },
     },
     allowPositionals: false,
   });
   const from = normalizedDate(values.from, "from");
   const to = normalizedDate(values.to, "to");
-  if (from && to && from > to) throw new Error("--from must not be after --to");
-  const relation = normalizeRelation(normalizedText(values.relation));
   const place = normalizedText(values.place);
   const actor = normalizedText(values.actor);
-  const sourceId = normalizedText(values["source-id"]);
-  if (values["candidate-pairs"]) {
-    if (relation || sourceId) {
-      throw new Error("candidate mode does not accept --relation or --source-id");
-    }
-    const datasets = (values.datasets ?? "icbe,ucdp")
-      .split(",")
-      .map((dataset) => dataset.trim().toLowerCase())
-      .filter(Boolean);
-    const allowed = new Set(["icbe", "ucdp"]);
-    if (datasets.some((dataset) => !allowed.has(dataset))) {
-      throw new Error("candidate mode currently supports only ICBe and UCDP");
-    }
-    const query: Partial<CandidateQuery> = {
-      candidate_pairs: true,
-      datasets: [...new Set(datasets)].sort() as Array<"icbe" | "ucdp">,
-      ...(place ? { place } : {}),
-      ...(from ? { from } : {}),
-      ...(to ? { to } : {}),
-      ...(actor ? { actor } : {}),
-    };
-    const dataDirectory = values["data-dir"] ?? resolve(process.cwd(), "data/local/stage3a/bundles");
-    const response = new CandidateStore(dataDirectory).search(query);
-    if (values.json) outputJson(response, io);
-    else printCandidateSearch(response, io);
-    return 0;
-  }
-  const query: SearchQuery = {
-    datasets: normalizeDatasets(values.datasets),
+  if (from && to && from > to) throw new Error("--from must not be after --to");
+  const query: Partial<CandidateQuery> = {
+    candidate_pairs: true,
+    datasets: normalizeCurrentDatasets(values.datasets),
     ...(place ? { place } : {}),
     ...(from ? { from } : {}),
     ...(to ? { to } : {}),
     ...(actor ? { actor } : {}),
-    ...(relation ? { relation } : {}),
-    ...(sourceId ? { source_id: sourceId } : {}),
   };
-  const response = new AlderaStore(values["data-dir"]).search(query);
+  const response = currentStore(values["data-dir"]).search(query);
   if (values.json) outputJson(response, io);
-  else printSearch(response, io);
+  else printCandidateSearch(response, io);
   return 0;
 }
 
@@ -289,7 +280,7 @@ function printCandidateSearch(response: CandidateSearchResponse, io: CliIO): voi
   io.out(
     `Contract ${response.receipt.candidate_contract.id}@${response.receipt.candidate_contract.version} ${response.receipt.candidate_contract.sha256}`,
   );
-  io.out("Candidate pairs are non-authoritative and are not mapping assertions.");
+  io.out("Candidate pairs are non-authoritative and are not relationship assertions.");
   io.out(`Native records (${response.records.length}):`);
   for (const record of response.records) io.out(`  ${record.ref}  ${record.native_sha256}`);
   io.out(`Candidate pairs (${response.candidate_pairs.length}):`);
@@ -314,18 +305,4 @@ function printCandidateSearch(response: CandidateSearchResponse, io: CliIO): voi
   io.out(`Not prioritized (${response.not_prioritized_refs.length}):`);
   for (const ref of response.not_prioritized_refs) io.out(`  ${ref}`);
   io.out(response.no_candidate_notice);
-}
-
-function printSearch(response: SearchResponse, io: CliIO): void {
-  const { receipt } = response;
-  io.out(`Receipt ${receipt.receipt_sha256}`);
-  io.out(
-    `Versions: ucdp@${receipt.inputs.ucdp.version}, acled@${receipt.inputs.acled.version}, mappings@${receipt.inputs.mapping.version}`,
-  );
-  io.out(`Records (${response.records.length}):`);
-  for (const record of response.records) io.out(`  ${record.ref}  ${record.native_sha256}`);
-  io.out(`Mappings (${response.mappings.length}):`);
-  for (const mapping of response.mappings) {
-    io.out(`  ${mapping.source} --${mapping.relation}--> ${mapping.target ?? "∅"}`);
-  }
 }

@@ -19,7 +19,6 @@ def main() -> int:
     result = {
         "format_version": document["format_version"],
         "native_refs": [record["ref"] for record in document["records"]],
-        "mapping_relations": [mapping["relation"] for mapping in document["mappings"]],
         "candidate_pairs": [
             {
                 "icbe_ref": pair["icbe_ref"],

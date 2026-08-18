@@ -223,6 +223,16 @@ export class CandidateStore {
     this.validate();
   }
 
+  records(): CandidateSourceRecord[] {
+    return [...this.bundles.icbe.records, ...this.bundles.ucdp.records].sort((a, b) =>
+      compareStrings(a.ref, b.ref),
+    );
+  }
+
+  record(ref: string): CandidateSourceRecord | undefined {
+    return this.records().find((record) => record.ref === ref);
+  }
+
   private validate(): void {
     for (const dataset of ["icbe", "ucdp"] as const) {
       const bundle = this.bundles[dataset];

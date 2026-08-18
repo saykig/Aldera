@@ -13,7 +13,7 @@ The original values answer different questions:
 
 They are not mutually exclusive relationship types. Stage 3A showed that a pair can be not the same occurrence, meaningfully related, broader or narrower, and unsafe to align as the same occurrence at the same time.
 
-Stage 3B therefore proposes moving `unmapped` out of the relationship model. A future no-counterpart or coverage assertion has no target record and is structurally separate from a relationship between two records. The legacy enum and legacy `MappingAssertion` schema remain intact for the synthetic UCDP/ACLED proving fixture.
+Stage 3B therefore proposes keeping `unmapped` out of the relationship model. A future no-counterpart or coverage assertion has no target record and is structurally separate from a relationship between two records. The retired single-label prototype is not a compatibility architecture for the real proving ground.
 
 ## Relationship assertion v0.1
 
@@ -54,7 +54,7 @@ The three challenge pairs may become relationship assertions even though candida
 
 ## Separate stable-reference layer
 
-Stage 3B must not retrofit the real assertions into the legacy UCDP/ACLED `MappingAssertion` schema by adding `icbe` to `DatasetId`. The existing synthetic fixture and its commands remain working and unchanged.
+Stage 3B starts with a separate real relationship layer rather than retrofitting assertions into a closed dataset enum or a shared conventional native-ID shape.
 
 The proposed real relationship layer uses stable opaque source references for both endpoints. An endpoint may resolve through a native event ID, source-row locator, composite key, or another pinned identity mechanism. Aldera requires a reproducible pointer back to a native object; it does not require research systems to identify objects in the same way.
 

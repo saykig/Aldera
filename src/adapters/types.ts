@@ -1,8 +1,6 @@
-import type { DatasetId } from "../types.js";
-
 /** A transient filter view. It is never stored or returned as an Aldera event. */
 export interface NativeSearchView {
-  dataset: DatasetId;
+  dataset: "ucdp";
   nativeId: string;
   places: string[];
   dateFrom: string;

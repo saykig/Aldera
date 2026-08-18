@@ -351,7 +351,6 @@ describe("non-authoritative candidate discovery", () => {
     const consumer = fileURLToPath(new URL("./interop/consume_search.py", import.meta.url));
     const consumed = JSON.parse(execFileSync("python3", [consumer, outputPath], { encoding: "utf8" }));
     assert.deepEqual(consumed.native_refs, result.records.map((record) => record.ref));
-    assert.deepEqual(consumed.mapping_relations, []);
     assert.deepEqual(consumed.candidate_pairs, result.receipt.candidate_pairs.map((pair) => ({
       icbe_ref: pair.icbe_ref,
       ucdp_ref: pair.ucdp_ref,

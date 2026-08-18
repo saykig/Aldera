@@ -1,10 +1,16 @@
 # Aldera
 
-Aldera is an experimental interoperability layer for research data. Its synthetic proving ground connects UCDP and ACLED representations; Stage 3A adds non-authoritative candidate discovery between real ICBe and UCDP GED records while both datasets remain native and authoritative.
+Aldera is an experimental interoperability layer for research data. Its current proving ground examines real ICBe and UCDP GED records while both sources remain native and authoritative.
 
-Aldera asks the following: Where did this come from? What does it measure? What can it legitimately be compared with? Where are the representations commensurable, partially commensurable, or incompatible? What information is lost in moving between them?
+Aldera asks: Where did this come from? What does it measure? What can it legitimately be compared with? Where are the representations commensurable, partially commensurable, or unsafe to align? What information is lost when researchers treat different units as equivalent?
 
-Aldera does **not** define a universal event ontology and does not convert records into an “Aldera format.” It owns only dataset/version descriptors, small explicit search adapters, separate candidate or mapping objects, provenance, validation, and deterministic evidence receipts.
+Aldera does **not** define a universal event ontology and does not convert records into an “Aldera format.” It owns stable source references, two explicit source adapters, non-authoritative candidate objects, provenance, validation, and deterministic evidence receipts.
+
+## Current state
+
+Stage 3A provides deterministic, non-authoritative candidate discovery for a bounded ICBe ↔ UCDP slice. Human review is preserved in a tracked sanitized benchmark, but that benchmark is not mapping authority. Stage 3B relationship assertions are not implemented on `main`.
+
+Native source content is not committed. Reconstruct the pinned local bundles according to [docs/stage3a.md](docs/stage3a.md). Access is unrestricted; reuse is subject to the applicable license.
 
 ## Try it
 
@@ -13,53 +19,45 @@ Requires Node.js 22 or newer.
 ```sh
 pnpm install
 pnpm test
-pnpm aldera validate
-pnpm aldera inspect ucdp:UCDP-SYN-001
-pnpm aldera map ucdp:UCDP-SYN-001 acled:ACLED-SYN-001
-pnpm aldera search --place Crimea --from 2014-02-01 --to 2014-03-31 --datasets ucdp,acled
+
+pnpm aldera validate --data-dir data/local/stage3a/bundles
+pnpm aldera inspect ucdp:149866 --data-dir data/local/stage3a/bundles
+pnpm aldera search --candidate-pairs --datasets icbe,ucdp \
+  --data-dir data/local/stage3a/bundles --json
 ```
 
-After acquiring and preparing the pinned Stage 3A sources locally as described in [docs/stage3a.md](docs/stage3a.md):
+`map` remains one of Aldera’s four verbs, but before Stage 3B it reports that no relationship-assertion layer exists:
 
 ```sh
-pnpm aldera search --candidate-pairs --datasets icbe,ucdp --json
+pnpm aldera map <icbe-source-ref> <ucdp-source-ref> \
+  --data-dir data/local/stage3a/bundles --json
 ```
 
-Every command accepts `--json`. Installed packages expose the same interface as `aldera`.
+Every machine-readable response declares `format_version: "0.1"`. A Python standard-library consumer at `test/interop/consume_search.py` reads candidate-search output without importing Aldera or understanding either native schema.
 
-The JSON envelope declares `format_version: "0.1"`. A standard-library-only example consumer is available at `test/interop/consume_search.py`; it reads native references and mapping relations without importing Aldera or understanding either native dataset schema.
+## Current data model
 
-The committed UCDP/ACLED records are explicitly synthetic and must not be cited as research data. Real Stage 3A artifacts and reconstructive review output stay under gitignored `data/local/`; the repository contains source metadata, hashes, and a sanitized human-review benchmark.
+- Reconstructed ICBe and UCDP source bundles preserve the complete native objects.
+- ICBe uses a stable source-row locator binding the exact artifact, extracted table, row, and native crisis/sentence coordinates. Aldera does not pretend ICBe published an event ID.
+- UCDP preserves its native `id`.
+- Explicit ICBe and UCDP adapters read only the native fields needed for candidate discovery; their transient views are never returned as canonical events.
+- Candidate pairs carry explicit evidence, `mapping_authority: false`, no relationship type, and no numeric confidence.
+- Candidate receipts bind the exact source bundles, artifact hashes, candidate-contract identity/hash, normalized parameters, ordered native refs/hashes, ordered candidates, and a deterministic receipt hash.
 
-## Data model
+The repository tracks source metadata, hashes, and the sanitized Stage 3A human-review benchmark. Native content and reconstructive review output remain under gitignored `data/local/`.
 
-- `fixtures/synthetic/ucdp.json` and `acled.json` hold native-shaped records. The object under `native` is never rewritten; its source identifier remains its own.
-- `datasets.json` records exact dataset versions and native-ID field names.
-- Explicit UCDP and ACLED adapters read the minimum native fields needed for search without producing a canonical event.
-- `mappings.json` declares the governed UCDP → ACLED comparison and holds relationship assertions, rationale, optional scope and uncertainty notes, semantic preservation/loss, and provenance.
-- Search JSON has `format_version: "0.1"` and includes full native records, relevant mappings, exact bundle hashes, normalized parameters, and a deterministic receipt.
-
-The event-record vocabulary is deliberately Aldera-owned and contains only relations demonstrated by the fixture:
-
-- `aldera:close`: both records are asserted to represent substantially the same underlying occurrence, but native definitions or event boundaries prevent treating them as identical.
-- `aldera:related`: the records concern connected activity or the same broader episode, but Aldera does not assert that they represent the same occurrence.
-- `aldera:incompatible`: the records are plausible comparison candidates because they overlap on relevant signals, but within the asserted scope their representations cannot safely be treated as the same unit. This does not imply either native dataset is factually wrong.
-- `aldera:unmapped`: no counterpart in the declared target dataset is asserted within this pinned mapping bundle. It does not imply absence from the full target dataset or from other datasets.
-
-These relations describe relationships between representations, not objective historical truth. SKOS remains intellectual inspiration for future concept or vocabulary mappings, but its properties are not applied to event records.
-
-More detail is in [docs/architecture.md](docs/architecture.md).
+More detail is in [docs/architecture.md](docs/architecture.md), [docs/stage3a.md](docs/stage3a.md), and the proposed [Stage 3B design](docs/stage3b-design.md).
 
 ## Commands
 
-`aldera inspect [target]` shows the catalog, a dataset descriptor, a native record, or a mapping assertion.
+`aldera inspect [target]` inspects the current source-bundle metadata or an opaque native source reference when reconstructed bundles are available.
 
-`aldera validate` performs schema and cross-file checks: source references, versions, namespaces, native hashes, mapping direction, and bounded unmapped semantics.
+`aldera validate` validates reconstructed bundle integrity, native hashes, stable identities, and the pinned ICBe/UCDP comparison window.
 
-`aldera map <source> [target]` is read-only and inspects assertions involving the source or between the specified records.
+`aldera map <source> [target]` currently reports that no relationship assertions exist. It does not promote candidates.
 
-`aldera search` supports dataset, place, date range, actor, relation, and source-identifier filters. `--candidate-pairs` selects the distinct non-authoritative ICBe/UCDP mode; candidates never become mapping assertions. Pass another bundle with `--data-dir`.
+`aldera search --candidate-pairs` runs the deterministic, non-authoritative ICBe/UCDP candidate contract.
 
 ## Scope
 
-This bounded proving ground has no graphical frontend, database, network ingestion, policy evaluator, DSL, generic adapter framework, automated mapping classifier, or inherited product corpus.
+This bounded proving ground has no graphical frontend, database, network ingestion, universal event schema, generic adapter framework, automated mapping classifier, or inherited product corpus.

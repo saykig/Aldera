@@ -9,8 +9,7 @@
   },
   "files": [
     "dist",
-    "fixtures",
-    "schemas"
+    "fixtures"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

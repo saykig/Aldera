@@ -8,7 +8,7 @@ Aldera does **not** define a universal event ontology and does not convert recor
 
 ## Current state
 
-Stage 3A provides deterministic, non-authoritative candidate discovery for a bounded ICBe ↔ UCDP slice. Human review is preserved in a tracked sanitized benchmark, but that benchmark is not mapping authority. On the unmerged `stage3b-v0.1` branch, a separate tracked assertion bundle is the authority for the 16 reviewed relationships.
+Stage 3A provides deterministic, non-authoritative candidate discovery for a bounded ICBe ↔ UCDP slice. Human review is preserved in a tracked sanitized benchmark, but that benchmark is not mapping authority. Stage 3B v0.1 implements the reviewed ICBe ↔ UCDP relationship-assertion layer, whose separate tracked assertion bundle is the authority for the 16 reviewed relationships.
 
 Native source content is not committed. Reconstruct the pinned local bundles according to [docs/stage3a.md](docs/stage3a.md). Access is unrestricted; reuse is subject to the applicable license.
 

@@ -1,6 +1,6 @@
 # Stage 3B relationship-assertion design
 
-Status: **implemented v0.1 on `stage3b-v0.1`; not merged into `main`**. The implementation follows this bounded design without changing the Stage 3A candidate contract.
+Status: **Stage 3B v0.1 implements the reviewed ICBe ↔ UCDP relationship-assertion layer.** The implementation follows this bounded design without changing the Stage 3A candidate contract.
 
 ## Why the old relation enum is not one variable
 

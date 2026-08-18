@@ -17,7 +17,10 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
     "validate": "node --import tsx bin/aldera.ts validate",
-    "aldera": "node --import tsx bin/aldera.ts"
+    "aldera": "node --import tsx bin/aldera.ts",
+    "stage3a:build-bundles": "node --import tsx scripts/build-stage3a-bundles.ts",
+    "stage3a:review": "node --import tsx scripts/render-stage3a-review.ts",
+    "stage3a:verify-sources": "node --import tsx scripts/verify-stage3a-sources.ts"
   },
   "engines": {
     "node": ">=22"

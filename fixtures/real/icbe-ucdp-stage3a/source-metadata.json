@@ -1,0 +1,59 @@
+{
+  "experiment": "Aldera Stage 3A: ICBe ↔ UCDP GED real-data proving ground",
+  "official_source_verification_date": "2026-08-17",
+  "source_publication": {
+    "icbe": {
+      "persistent_id": "doi:10.7910/DVN/MNVUEP",
+      "dataset_url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/MNVUEP",
+      "dataverse_dataset_version": "1.0",
+      "release_time": "2024-04-04T19:56:20Z",
+      "datafile_id": 10040265,
+      "license": "CC BY-NC-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+    },
+    "ucdp": {
+      "dataset_url": "https://ucdp.uu.se/downloads/#ged_global",
+      "codebook_url": "https://ucdp.uu.se/downloads/ged/ged261.pdf",
+      "version": "26.1",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/"
+    }
+  },
+  "selection": {
+    "case": "ICBe crisis 471, Crimea-Donbas1",
+    "place": "Donbas: ICBe crisis text/location fields; UCDP Donetsk and Luhansk oblasts",
+    "from": "2014-04-07",
+    "to": "2014-04-24"
+  },
+  "sources": {
+    "icbe": {
+      "version": "ICBe V1.1; Harvard Dataverse dataset version 1.0",
+      "artifact_url": "https://dataverse.harvard.edu/api/access/datafile/10040265",
+      "artifact_filename": "ICBe_Dataverse_replication.tar.gz",
+      "artifact_sha256": "sha256:882121e137250bded7e2405e8aa65c8a8cc21c83348a754862340b8048846fc6",
+      "extracted_artifact_filename": "ICBe_V1.1_events_agreed.Rds",
+      "extracted_artifact_sha256": "sha256:8f34acf039bbb205aa01b356448994a4d6262b193768aafe8f5f2fe6e6f7769d"
+    },
+    "ucdp": {
+      "version": "UCDP GED Global 26.1",
+      "artifact_url": "https://ucdp.uu.se/downloads/ged/ged261-csv.zip",
+      "artifact_filename": "ged261-csv.zip",
+      "artifact_sha256": "sha256:8c941d84954e555ee2e54f40fa04d9203bf1e2f962203d0a9930966c4947c667",
+      "extracted_artifact_filename": "GEDEvent_v26_1.csv",
+      "extracted_artifact_sha256": "sha256:61c3bf0a86374778343ba30c28a18b1fe739e2c33a76055504427eded4f8be27"
+    }
+  },
+  "redistribution": {
+    "icbe": "The exact replication archive has unrestricted access; reuse is subject to the applicable CC BY-NC-SA 4.0 license. Raw and reconstructive native records remain under gitignored data/local/ to avoid mixing third-party license terms into Aldera's Apache-2.0 tree.",
+    "ucdp": "The official UCDP download center states that current datasets are CC BY 4.0 and may be redistributed with citation. The full raw artifact remains under gitignored data/local/ because Stage 3A does not require republishing it."
+  },
+  "expected_selection_counts": {
+    "icbe": 12,
+    "ucdp": 10,
+    "total": 22
+  },
+  "canonical_parsed_bundle_sha256": {
+    "icbe": "sha256:97fff8ab08e876751c1273e054caa0e9b48cf9e7216323d593cc97360569a4fe",
+    "ucdp": "sha256:76259090549925a00bf3675ed226429ac27d92ff1c10c18ba90c4ec7a64a9ee8"
+  }
+}

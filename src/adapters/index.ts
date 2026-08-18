@@ -8,6 +8,8 @@ const adapters: Record<DatasetId, NativeAdapter> = {
   acled: adaptAcled,
 };
 
+export { adaptIcbe } from "./icbe.js";
+
 export function adapterFor(dataset: DatasetId): NativeAdapter {
   return adapters[dataset];
 }

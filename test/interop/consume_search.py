@@ -20,6 +20,14 @@ def main() -> int:
         "format_version": document["format_version"],
         "native_refs": [record["ref"] for record in document["records"]],
         "mapping_relations": [mapping["relation"] for mapping in document["mappings"]],
+        "candidate_pairs": [
+            {
+                "icbe_ref": pair["icbe_ref"],
+                "ucdp_ref": pair["ucdp_ref"],
+                "reasons": pair["reasons"],
+            }
+            for pair in document.get("candidate_pairs", [])
+        ],
     }
     print(json.dumps(result, sort_keys=True))
     return 0
